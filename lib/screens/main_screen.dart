@@ -33,42 +33,37 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _pages[_selectedIndex],
-      bottomNavigationBar: Stack(
-        alignment: Alignment.center,
-        children: [
-          BottomNavigationBar(
-            currentIndex: _selectedIndex > 2
-                ? _selectedIndex - 1
-                : _selectedIndex,
-            onTap: (index) {
-              if (index == 2) return;
-              _onItemTapped(index > 1 ? index + 1 : index);
-            },
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-              BottomNavigationBarItem(icon: Icon(Icons.group), label: ''),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_today),
-                label: '',
-              ),
-              BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-            ],
-            selectedItemColor: Color(0xFF000000),
-            unselectedItemColor: Color(0xFF9CA3AF),
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex > 2
+            ? _selectedIndex - 1
+            : _selectedIndex == 2
+            ? 0
+            : _selectedIndex,
+        onTap: (index) {
+          if (index == 2) return; // 중앙 FAB는 따로 처리
+          _onItemTapped(index > 1 ? index + 1 : index);
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: '채팅'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: '캘린더',
           ),
-          Positioned(
-            bottom: 10,
-            child: FloatingActionButton(
-              backgroundColor: Colors.cyanAccent,
-              shape: const CircleBorder(),
-              elevation: 4,
-              onPressed: () => _onItemTapped(2),
-              child: const Icon(Icons.podcasts, color: Colors.black),
-            ),
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: '내 정보'),
         ],
+        selectedItemColor: Color(0xFF000000),
+        unselectedItemColor: Color(0xFF9CA3AF),
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.cyanAccent,
+        shape: const CircleBorder(),
+        elevation: 4,
+        onPressed: () => _onItemTapped(2),
+        child: const Icon(Icons.podcasts, color: Colors.black),
       ),
     );
   }
