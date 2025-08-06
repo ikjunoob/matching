@@ -118,7 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: _buildCard(
-                  image: 'https://source.unsplash.com/600x400/?books',
+                  image:
+                      'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=600&q=80',
                   title: "함께 성장하는 독서 모임",
                   subtitle: "독서, 자기계발",
                   heartCount: 120,
@@ -127,7 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildCard(
-                  image: 'https://source.unsplash.com/600x400/?brunch',
+                  image:
+                      'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
                   title: "주말엔 브런치",
                   subtitle: "맛집, 취향공유",
                   heartCount: 88,
@@ -142,7 +144,8 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: _buildCard(
-                  image: 'https://source.unsplash.com/600x400/?stars',
+                  image:
+                      'https://images.unsplash.com/photo-1508264165352-258db2ebd59b?auto=format&fit=crop&w=600&q=8',
                   title: "별 보러 가는 언덕",
                   subtitle: "자연, 밤하늘",
                   heartCount: 95,
@@ -151,7 +154,8 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildCard(
-                  image: 'https://source.unsplash.com/600x400/?cafe',
+                  image:
+                      'https://images.unsplash.com/photo-1507914372336-5d8f0c006f0c?auto=format&fit=crop&w=600&q=80',
                   title: "조용한 카페",
                   subtitle: "공부하기 좋은 카페",
                   heartCount: 76,
@@ -167,21 +171,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildUser(
-                  "https://randomuser.me/api/portraits/women/1.jpg",
-                  "제니",
-                  250,
-                ),
-                _buildUser(
-                  "https://randomuser.me/api/portraits/men/2.jpg",
-                  "라이언",
-                  210,
-                ),
-                _buildUser(
-                  "https://randomuser.me/api/portraits/women/3.jpg",
-                  "클로이",
-                  180,
-                ),
+                _buildUser("https://i.pravatar.cc/150?img=1", "제니", 250),
+                _buildUser("https://i.pravatar.cc/150?img=2", "라이언", 210),
+                _buildUser("https://i.pravatar.cc/150?img=3", "클로이", 180),
               ],
             ),
           ),
