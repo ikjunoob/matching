@@ -32,30 +32,58 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex > 2
-            ? _selectedIndex - 1
-            : _selectedIndex == 2
-            ? 0
-            : _selectedIndex,
-        onTap: (index) {
-          if (index == 2) return; // 중앙 FAB는 따로 처리
-          _onItemTapped(index > 1 ? index + 1 : index);
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: '채팅'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: '캘린더',
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: '내 정보'),
-        ],
-        selectedItemColor: Color(0xFF000000),
-        unselectedItemColor: Color(0xFF9CA3AF),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+        ),
+        child: BottomAppBar(
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 8,
+          child: SizedBox(
+            height: 60,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.home,
+                    color: _selectedIndex == 0 ? Colors.black : Colors.grey,
+                  ),
+                  onPressed: () => _onItemTapped(0),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.group,
+                    color: _selectedIndex == 1 ? Colors.black : Colors.grey,
+                  ),
+                  onPressed: () => _onItemTapped(1),
+                ),
+                const SizedBox(width: 40), // for spacing around FAB
+                IconButton(
+                  icon: Icon(
+                    Icons.calendar_today,
+                    color: _selectedIndex == 3 ? Colors.black : Colors.grey,
+                  ),
+                  onPressed: () => _onItemTapped(3),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.person,
+                    color: _selectedIndex == 4 ? Colors.black : Colors.grey,
+                  ),
+                  onPressed: () => _onItemTapped(4),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
