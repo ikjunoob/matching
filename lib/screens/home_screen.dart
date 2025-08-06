@@ -134,14 +134,13 @@ class _HomeScreenState extends State {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // "이런 모임은 어때요?" 섹션
           SectionTitle(
             title: "✨ 이런 모임은 어때요?",
-            onMoreTap: () => setState(() => _selectedTabIndex = 1), // 모임 탭으로 이동
+            onMoreTap: () => setState(() => _selectedTabIndex = 1),
           ),
           const SizedBox(height: 8),
 
-          // 모임 카드 슬라이드 (왼쪽 정렬)
+          // 모임 카드 슬라이드 (전부 print 메시지)
           SizedBox(
             height: 160,
             child: ListView(
@@ -152,29 +151,33 @@ class _HomeScreenState extends State {
                   image:
                       'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=600&q=80',
                   title: "함께 성장하는 독서 모임",
-                  subtitle: "독서, 자기계발",
+                  tags: "#독서 #자기계발",
                   heartCount: 120,
+                  onArrowTap: () => print("함께 성장하는 독서 모임: 상세 준비중"),
                 ),
                 _buildCard(
                   image:
                       'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
                   title: "주말엔 브런치",
-                  subtitle: "맛집, 취향공유",
+                  tags: "#맛집 #취향공유",
                   heartCount: 88,
+                  onArrowTap: () => print("주말엔 브런치: 상세 준비중"),
                 ),
                 _buildCard(
                   image:
                       'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
                   title: "토요일엔 스터디/기타 긴 이름 예시",
-                  subtitle: "스터디, 개발, 네트워킹",
+                  tags: "#스터디 #개발 #네트워킹",
                   heartCount: 77,
+                  onArrowTap: () => print("토요일엔 스터디/기타 긴 이름 예시: 상세 준비중"),
                 ),
                 _buildCard(
                   image:
                       'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
                   title: "문화 탐방 모임",
-                  subtitle: "전시, 문화생활",
+                  tags: "#전시 #문화생활",
                   heartCount: 65,
+                  onArrowTap: () => print("문화 탐방 모임: 상세 준비중"),
                 ),
               ],
             ),
@@ -199,29 +202,33 @@ class _HomeScreenState extends State {
                   image:
                       'https://images.unsplash.com/photo-1508264165352-258db2ebd59b?auto=format&fit=crop&w=8',
                   title: "별 보러 가는 언덕",
-                  subtitle: "자연, 밤하늘",
+                  tags: "#자연 #밤하늘",
                   heartCount: 95,
+                  onArrowTap: () => print("별 보러 가는 언덕: 상세 준비중"),
                 ),
                 _buildCard(
                   image:
                       'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
                   title: "조용한 카페",
-                  subtitle: "공부하기 좋은 카페",
+                  tags: "#공부 #카페 #스터디",
                   heartCount: 76,
+                  onArrowTap: () => print("조용한 카페: 상세 준비중"),
                 ),
                 _buildCard(
                   image:
                       'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
                   title: "조용한 카페",
-                  subtitle: "공부하기 좋은 카페",
+                  tags: "#공부 #카페 #스터디",
                   heartCount: 76,
+                  onArrowTap: () => print("조용한 카페: 상세 준비중"),
                 ),
                 _buildCard(
                   image:
                       'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
                   title: "조용한 카페",
-                  subtitle: "공부하기 좋은 카페",
+                  tags: "#공부 #카페 #스터디",
                   heartCount: 76,
+                  onArrowTap: () => print("조용한 카페: 상세 준비중"),
                 ),
               ],
             ),
@@ -232,14 +239,29 @@ class _HomeScreenState extends State {
           const SizedBox(height: 11),
 
           // 유저 카드 영역 - spaceBetween 간격!
-          SizedBox(
-            height: 140,
+          Padding(
+            padding: const EdgeInsets.only(
+              left: 26.0,
+              right: 14.0,
+            ), // ← 왼쪽이 더 넓음
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildUser("https://i.pravatar.cc/150?img=1", "제니", 250),
-                _buildUser("https://i.pravatar.cc/150?img=2", "라이언", 210),
-                _buildUser("https://i.pravatar.cc/150?img=3", "클로이", 180),
+                _buildUser(
+                  "https://randomuser.me/api/portraits/women/44.jpg", // 여성
+                  "제니",
+                  250,
+                ),
+                _buildUser(
+                  "https://randomuser.me/api/portraits/men/36.jpg", // 남성
+                  "라이언",
+                  210,
+                ),
+                _buildUser(
+                  "https://randomuser.me/api/portraits/women/68.jpg", // 여성
+                  "클로이",
+                  180,
+                ),
               ],
             ),
           ),
@@ -252,9 +274,13 @@ class _HomeScreenState extends State {
   Widget _buildCard({
     required String image,
     required String title,
-    required String subtitle,
+    required String tags, // 예: "#스터디 #개발 #네트워킹"
     required int heartCount,
+    VoidCallback? onArrowTap,
   }) {
+    // 공백 기준 분리
+    final tagList = tags.trim().split(RegExp(r'\s+'));
+
     return Container(
       width: 160,
       margin: const EdgeInsets.only(right: 12),
@@ -264,95 +290,181 @@ class _HomeScreenState extends State {
       ),
       child: Stack(
         children: [
-          // 하단 텍스트 정보 (반투명 라운드 박스)
-          Positioned(
-            left: 8,
-            bottom: 8,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                color: Colors.black.withOpacity(0.44),
-                constraints: const BoxConstraints(
-                  maxWidth: 132, // 카드 width - margin 감안 (160-2*12 등)
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12, // 🔵 크기 더 줄임
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      "#$subtitle",
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 10, // 🔵 더 작게
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+          // Gradient overlay
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.65)],
                 ),
               ),
             ),
           ),
-          // 상단 인원수 + 하트 (반투명 라운드 박스)
+          // 상단 인원수 + 하트 (각각 반투명)
           Positioned(
-            top: 8,
-            left: 8,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                color: Colors.black.withOpacity(0.44),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.group, size: 16, color: Colors.white),
-                    const SizedBox(width: 3),
-                    Text(
-                      "5/10명",
-                      style: const TextStyle(color: Colors.white, fontSize: 11),
-                    ),
-                    const SizedBox(width: 11),
-                    const Icon(
-                      Icons.favorite,
-                      size: 16,
-                      color: Colors.redAccent,
-                    ),
-                    Text(
-                      "$heartCount",
-                      style: const TextStyle(color: Colors.white, fontSize: 11),
-                    ),
-                  ],
+            top: 10,
+            left: 10,
+            right: 10,
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.45),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.group, size: 13, color: Colors.white),
+                      const SizedBox(width: 2),
+                      Text(
+                        "5/10명",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.45),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.favorite,
+                        size: 13,
+                        color: Colors.redAccent,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        "$heartCount",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          // 우측 하단 화살표 (반투명 라운드 박스)
+          // 하단: 타이틀(반투명 X) + 태그(각각 반투명)
           Positioned(
-            bottom: 8,
-            right: 8,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(7),
-              child: Container(
-                color: Colors.black.withOpacity(0.44),
-                padding: const EdgeInsets.all(4),
-                child: const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 12,
-                  color: Colors.white,
-                ), // 아이콘도 소폭 줄임
+            left: 10,
+            bottom: 10,
+            right: 34, // ← 화살표와 겹치지 않도록 right값 살짝 줌
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 타이틀
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    shadows: [Shadow(color: Colors.black45, blurRadius: 3)],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 5),
+                // 태그 슬라이드 or wrap
+                tagList.length <= 2
+                    ? Wrap(
+                        spacing: 6,
+                        children: tagList
+                            .where((tag) => tag.isNotEmpty)
+                            .map(
+                              (tag) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.35),
+                                  borderRadius: BorderRadius.circular(7),
+                                ),
+                                child: Text(
+                                  tag.startsWith('#') ? tag : '#$tag',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      )
+                    : SizedBox(
+                        height: 24,
+                        // 태그가 3개 이상이면 가로 슬라이드
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: tagList.length,
+                          itemBuilder: (context, idx) {
+                            final tag = tagList[idx];
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.35),
+                                  borderRadius: BorderRadius.circular(7),
+                                ),
+                                child: Text(
+                                  tag.startsWith('#') ? tag : '#$tag',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+              ],
+            ),
+          ),
+          // 우측 하단 화살표 (반투명, 탭 가능하게)
+          Positioned(
+            bottom: 10,
+            right: 10,
+            child: GestureDetector(
+              onTap: onArrowTap, // ← 여기에 상세 페이지 이동, 혹은 null
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: Container(
+                  color: Colors.black.withOpacity(0.44),
+                  padding: const EdgeInsets.all(4),
+                  child: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 12,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ),
