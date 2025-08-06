@@ -5,6 +5,6 @@ class CalendarScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('캘린더 탭 (더미)'));
+    return const Scaffold(body: Center(child: Text("📅 캘린더 탭입니다 (더미 화면)")));
   }
 }
