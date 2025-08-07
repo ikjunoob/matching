@@ -3,23 +3,52 @@ import 'package:flutter/material.dart';
 import 'notification_screen.dart';
 
 // 홈 화면 위젯 (탭 구조 포함)
-// 홈 컨텐츠, 탭 전환(추천,모임,구해요,장소), 상단 바 포함
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int tabIndex;
+  final void Function(int tabIndex)? onTabChange;
+
+  const HomeScreen({
+    super.key,
+    this.tabIndex = 0,
+    this.onTabChange,
+  });
 
   @override
-  State createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State {
-  int _selectedTabIndex = 0; // 현재 선택된 탭 인덱스
-  final List tabs = ['추천', '모임', '구해요', '장소']; // 탭 이름 리스트
+class _HomeScreenState extends State<HomeScreen> {
+  late int _selectedTabIndex;
+  final List tabs = ['추천', '모임', '구해요', '장소'];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTabIndex = widget.tabIndex;
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.tabIndex != oldWidget.tabIndex) {
+      setState(() {
+        _selectedTabIndex = widget.tabIndex;
+      });
+    }
+  }
+
+  // 탭 클릭시 부모에 알려줌
+  void _onTabTap(int index) {
+    setState(() {
+      _selectedTabIndex = index;
+    });
+    widget.onTabChange?.call(index);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB), // 전체 배경 색
-      // ✅ 완전 왼쪽 끝 정렬 Custom AppBar
+      backgroundColor: const Color.fromARGB(255, 239, 247, 255),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: Container(
@@ -28,7 +57,7 @@ class _HomeScreenState extends State {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(width: 10), // 진짜로 완전 왼쪽 끝!
+                const SizedBox(width: 10),
                 const Padding(
                   padding: EdgeInsets.only(left: 5),
                   child: Text(
@@ -41,7 +70,6 @@ class _HomeScreenState extends State {
                   ),
                 ),
                 const SizedBox(width: 4),
-                // (원하면 CAMPUS CONNECT 텍스트 여기 추가)
                 Expanded(child: Container()),
                 IconButton(
                   icon: const Icon(Icons.notifications_none),
@@ -69,11 +97,11 @@ class _HomeScreenState extends State {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: List.generate(tabs.length, (index) {
-                final isSelected = _selectedTabIndex == index; // 현재 탭인지 여부
+                final isSelected = _selectedTabIndex == index;
                 return Padding(
-                  padding: const EdgeInsets.only(right: 20), // 탭 간 간격
+                  padding: const EdgeInsets.only(right: 20),
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedTabIndex = index),
+                    onTap: () => _onTabTap(index),
                     child: Column(
                       children: [
                         Text(
@@ -88,11 +116,9 @@ class _HomeScreenState extends State {
                         ),
                         const SizedBox(height: 4),
                         AnimatedContainer(
-                          duration: const Duration(
-                            milliseconds: 200,
-                          ), // 밑줄 애니메이션
+                          duration: const Duration(milliseconds: 200),
                           height: 2,
-                          width: isSelected ? 24 : 0, // 선택된 탭만 밑줄 표시
+                          width: isSelected ? 24 : 0,
                           color: isSelected
                               ? Colors.cyanAccent
                               : Colors.transparent,
@@ -106,12 +132,12 @@ class _HomeScreenState extends State {
           ),
           const SizedBox(height: 8),
 
-          // 각 탭별 컨텐츠를 바로 보여줌 (슬라이드X)
+          // 각 탭별 컨텐츠
           Expanded(
             child: Builder(
               builder: (context) {
                 if (_selectedTabIndex == 0) {
-                  return _buildRecommendTab(); // 추천 탭
+                  return _buildRecommendTab();
                 } else if (_selectedTabIndex == 1) {
                   return const Center(child: Text("모임 탭 더미"));
                 } else if (_selectedTabIndex == 2) {
@@ -130,17 +156,18 @@ class _HomeScreenState extends State {
   // 추천 탭 화면 구성
   Widget _buildRecommendTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100), // ← 하단 여백 70~80 추천
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 15),
           SectionTitle(
             title: "✨ 이런 모임은 어때요?",
-            onMoreTap: () => setState(() => _selectedTabIndex = 1),
+            onMoreTap: () => _onTabTap(1), // 모임 탭으로 이동!
           ),
           const SizedBox(height: 8),
 
-          // 모임 카드 슬라이드 (전부 print 메시지)
+          // 모임 카드 슬라이드
           SizedBox(
             height: 160,
             child: ListView(
@@ -148,32 +175,28 @@ class _HomeScreenState extends State {
               physics: const BouncingScrollPhysics(),
               children: [
                 _buildCard(
-                  image:
-                      'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=600&q=80',
+                  image: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=600&q=80',
                   title: "함께 성장하는 독서 모임",
                   tags: "#독서 #자기계발",
                   heartCount: 120,
                   onArrowTap: () => print("함께 성장하는 독서 모임: 상세 준비중"),
                 ),
                 _buildCard(
-                  image:
-                      'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
+                  image: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
                   title: "주말엔 브런치",
                   tags: "#맛집 #취향공유",
                   heartCount: 88,
                   onArrowTap: () => print("주말엔 브런치: 상세 준비중"),
                 ),
                 _buildCard(
-                  image:
-                      'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
+                  image: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
                   title: "토요일엔 스터디/기타 긴 이름 예시",
                   tags: "#스터디 #개발 #네트워킹",
                   heartCount: 77,
                   onArrowTap: () => print("토요일엔 스터디/기타 긴 이름 예시: 상세 준비중"),
                 ),
                 _buildCard(
-                  image:
-                      'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
+                  image: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
                   title: "문화 탐방 모임",
                   tags: "#전시 #문화생활",
                   heartCount: 65,
@@ -182,16 +205,14 @@ class _HomeScreenState extends State {
               ],
             ),
           ),
+          const SizedBox(height: 32),
 
-          const SizedBox(height: 24),
-          // "추천 장소" 섹션
           SectionTitle(
             title: "🎯 취향저격! 추천 장소",
-            onMoreTap: () => setState(() => _selectedTabIndex = 3), // 장소 탭으로 이동
+            onMoreTap: () => _onTabTap(3), // 장소 탭으로 이동!
           ),
           const SizedBox(height: 8),
 
-          // 장소 카드 슬라이드 (왼쪽 정렬)
           SizedBox(
             height: 160,
             child: ListView(
@@ -199,32 +220,28 @@ class _HomeScreenState extends State {
               physics: const BouncingScrollPhysics(),
               children: [
                 _buildCard(
-                  image:
-                      'https://images.unsplash.com/photo-1508264165352-258db2ebd59b?auto=format&fit=crop&w=8',
+                  image: 'https://images.unsplash.com/photo-1508264165352-258db2ebd59b?auto=format&fit=crop&w=8',
                   title: "별 보러 가는 언덕",
                   tags: "#자연 #밤하늘",
                   heartCount: 95,
                   onArrowTap: () => print("별 보러 가는 언덕: 상세 준비중"),
                 ),
                 _buildCard(
-                  image:
-                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
+                  image: 'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
                   title: "조용한 카페",
                   tags: "#공부 #카페 #스터디",
                   heartCount: 76,
                   onArrowTap: () => print("조용한 카페: 상세 준비중"),
                 ),
                 _buildCard(
-                  image:
-                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
+                  image: 'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
                   title: "조용한 카페",
                   tags: "#공부 #카페 #스터디",
                   heartCount: 76,
                   onArrowTap: () => print("조용한 카페: 상세 준비중"),
                 ),
                 _buildCard(
-                  image:
-                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
+                  image: 'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
                   title: "조용한 카페",
                   tags: "#공부 #카페 #스터디",
                   heartCount: 76,
@@ -233,32 +250,27 @@ class _HomeScreenState extends State {
               ],
             ),
           ),
-
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           const SectionTitle(title: "🔥 지금 가장 핫한 유저"),
           const SizedBox(height: 11),
 
-          // 유저 카드 영역 - spaceBetween 간격!
           Padding(
-            padding: const EdgeInsets.only(
-              left: 26.0,
-              right: 14.0,
-            ), // ← 왼쪽이 더 넓음
+            padding: const EdgeInsets.only(left: 26.0, right: 14.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildUser(
-                  "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=facearea&w=200&q=80", // 여성
+                  "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=facearea&w=200&q=80",
                   "제니",
                   250,
                 ),
                 _buildUser(
-                  "https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=200&q=80", // 남성
+                  "https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=200&q=80",
                   "라이언",
                   210,
                 ),
                 _buildUser(
-                  "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=facearea&w=200&q=80", // 여성
+                  "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=facearea&w=200&q=80",
                   "클로이",
                   180,
                 ),
@@ -274,11 +286,10 @@ class _HomeScreenState extends State {
   Widget _buildCard({
     required String image,
     required String title,
-    required String tags, // 예: "#스터디 #개발 #네트워킹"
+    required String tags,
     required int heartCount,
     VoidCallback? onArrowTap,
   }) {
-    // 공백 기준 분리
     final tagList = tags.trim().split(RegExp(r'\s+'));
 
     return Container(
@@ -290,7 +301,6 @@ class _HomeScreenState extends State {
       ),
       child: Stack(
         children: [
-          // Gradient overlay
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -303,7 +313,6 @@ class _HomeScreenState extends State {
               ),
             ),
           ),
-          // 상단 인원수 + 하트 (각각 반투명)
           Positioned(
             top: 10,
             left: 10,
@@ -311,10 +320,7 @@ class _HomeScreenState extends State {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.45),
                     borderRadius: BorderRadius.circular(7),
@@ -325,38 +331,25 @@ class _HomeScreenState extends State {
                       const SizedBox(width: 2),
                       Text(
                         "5/10명",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                        ),
+                        style: const TextStyle(color: Colors.white, fontSize: 11),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.45),
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.favorite,
-                        size: 13,
-                        color: Colors.redAccent,
-                      ),
+                      const Icon(Icons.favorite, size: 13, color: Colors.redAccent),
                       const SizedBox(width: 2),
                       Text(
                         "$heartCount",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                        ),
+                        style: const TextStyle(color: Colors.white, fontSize: 11),
                       ),
                     ],
                   ),
@@ -364,15 +357,13 @@ class _HomeScreenState extends State {
               ],
             ),
           ),
-          // 하단: 타이틀(반투명 X) + 태그(각각 반투명)
           Positioned(
             left: 10,
             bottom: 10,
-            right: 34, // ← 화살표와 겹치지 않도록 right값 살짝 줌
+            right: 34,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 타이틀
                 Text(
                   title,
                   style: const TextStyle(
@@ -385,7 +376,6 @@ class _HomeScreenState extends State {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 5),
-                // 태그 슬라이드 or wrap
                 tagList.length <= 2
                     ? Wrap(
                         spacing: 6,
@@ -415,7 +405,6 @@ class _HomeScreenState extends State {
                       )
                     : SizedBox(
                         height: 24,
-                        // 태그가 3개 이상이면 가로 슬라이드
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: tagList.length,
@@ -424,10 +413,7 @@ class _HomeScreenState extends State {
                             return Padding(
                               padding: const EdgeInsets.only(right: 6),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 3,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: Colors.black.withOpacity(0.35),
                                   borderRadius: BorderRadius.circular(7),
@@ -448,12 +434,11 @@ class _HomeScreenState extends State {
               ],
             ),
           ),
-          // 우측 하단 화살표 (반투명, 탭 가능하게)
           Positioned(
             bottom: 10,
             right: 10,
             child: GestureDetector(
-              onTap: onArrowTap, // ← 여기에 상세 페이지 이동, 혹은 null
+              onTap: onArrowTap,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(7),
                 child: Container(
@@ -479,13 +464,12 @@ class _HomeScreenState extends State {
       padding: const EdgeInsets.only(right: 16),
       child: Column(
         children: [
-          // 👇 원형 프로필 (ClipOval + Image.network)
           ClipOval(
             child: Image.network(
               imageUrl,
-              width: 70, // 원 모양 프레임의 크기
+              width: 70,
               height: 70,
-              fit: BoxFit.cover, // 동그란 프레임 안에 이미지를 꽉 채움
+              fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 width: 70,
                 height: 70,
@@ -516,8 +500,8 @@ class _HomeScreenState extends State {
 
 // 섹션 타이틀 위젯 (타이틀 + 더보기 버튼)
 class SectionTitle extends StatelessWidget {
-  final String title; // 제목 텍스트
-  final VoidCallback? onMoreTap; // 더보기 클릭 이벤트
+  final String title;
+  final VoidCallback? onMoreTap;
 
   const SectionTitle({super.key, required this.title, this.onMoreTap});
 
@@ -533,7 +517,7 @@ class SectionTitle extends StatelessWidget {
         if (onMoreTap != null)
           GestureDetector(
             onTap: onMoreTap,
-            child: Text("더보기 >", style: TextStyle(color: Colors.grey[600])),
+            child: Text("더보기 >", style: TextStyle(color: const Color.fromARGB(255, 36, 36, 36))),
           ),
       ],
     );

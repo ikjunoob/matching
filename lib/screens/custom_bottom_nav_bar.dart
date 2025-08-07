@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-// 커스텀 하단 네비게이션 바 (HTML/CSS 예시 완벽 반영)
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
   final VoidCallback onCenterTap;
+
   const CustomBottomNavBar({
     super.key,
     required this.currentIndex,
@@ -14,19 +14,20 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 메인 포인트 컬러
-    final accentColor = const Color.fromARGB(255, 0, 255, 251); // HTML 예시 #D8A7B1
-    // 아이콘 크기, 바 높이, 버튼 크기
-    const navBarHeight = 56.0;
-    const floatingSize = 70.0;
+    final accentColor = const Color.fromARGB(255, 0, 255, 251);
+    const navBarHeight = 52.0;
+    const floatingSize = 60.0;
+
+    // 중앙 버튼을 더 위로 올림 (양수방향)
+    final double floatingBottom = navBarHeight / 2 - 4; // (여기서 숫자 크게 할수록 위로!)
 
     return SizedBox(
-      height: navBarHeight + 14, // SVG 곡선 고려 추가
+      height: navBarHeight + 24, // 충분한 여유
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
         children: [
-          // SVG 곡선 백그라운드
+          // 바 배경
           Positioned(
             left: 0,
             right: 0,
@@ -36,9 +37,9 @@ class CustomBottomNavBar extends StatelessWidget {
               painter: _NavBarBgPainter(),
             ),
           ),
-          // 중앙 플로팅 버튼 (SVG 위, 가장 앞으로)
+          // 중앙 플로팅 버튼 (더 위로)
           Positioned(
-            bottom: navBarHeight - (floatingSize / 2) + 5, // 위로 띄우기!
+            bottom: floatingBottom,
             left: 0,
             right: 0,
             child: Center(
@@ -52,9 +53,9 @@ class CustomBottomNavBar extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: accentColor.withOpacity(0.35),
-                        blurRadius: 22,
-                        offset: const Offset(0, 6),
+                        color: accentColor.withOpacity(0.24),
+                        blurRadius: 18,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
@@ -65,7 +66,7 @@ class CustomBottomNavBar extends StatelessWidget {
               ),
             ),
           ),
-          // 네비게이션 아이콘 5개 (플로팅 버튼 공간 비움)
+          // 네비게이션 아이콘
           Positioned(
             left: 0,
             right: 0,
@@ -75,35 +76,30 @@ class CustomBottomNavBar extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // 홈
                   _NavBarIcon(
                     icon: Icons.home_rounded,
                     isActive: currentIndex == 0,
                     accentColor: accentColor,
                     onTap: () => onTap(0),
                   ),
-                  // 모임 (네트워크 아이콘)
                   _NavBarIcon(
                     custom: Image.network(
                       "https://cdn-icons-png.flaticon.com/512/1436/1436701.png",
-                      width: 28,
-                      height: 28,
+                      width: 25,
+                      height: 25,
                       color: currentIndex == 1 ? accentColor : Colors.grey[400],
                     ),
                     isActive: currentIndex == 1,
                     accentColor: accentColor,
                     onTap: () => onTap(1),
                   ),
-                  // 중앙 플로팅 자리
                   const Expanded(child: SizedBox()),
-                  // 캘린더
                   _NavBarIcon(
                     icon: Icons.calendar_today_outlined,
                     isActive: currentIndex == 3,
                     accentColor: accentColor,
                     onTap: () => onTap(3),
                   ),
-                  // 마이페이지
                   _NavBarIcon(
                     icon: Icons.person_rounded,
                     isActive: currentIndex == 4,
@@ -120,7 +116,7 @@ class CustomBottomNavBar extends StatelessWidget {
   }
 }
 
-// SVG 곡선 Painter (HTML/CSS 곡선과 유사하게, 얕고 부드럽게)
+// 움푹 파인 곡선: 더 좁고 부드럽게!
 class _NavBarBgPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -130,33 +126,37 @@ class _NavBarBgPainter extends CustomPainter {
 
     final path = Path();
 
-    // (HTML 예시와 유사한 얕은 곡선)
-    path.moveTo(0, 15);
-    path.quadraticBezierTo(0, 0, 15, 0);
-    path.lineTo(size.width * 0.37, 0);
+    // 좌측 라운드
+    path.moveTo(0, 20);
+    path.quadraticBezierTo(0, 0, 20, 0);
+
+    // 파인 부분 시작/끝 (더 좁게!)
+    final double curveWidth = 0.20; // 움푹 파인 곡선 전체 폭 비율
+    final double dipStart = size.width * (0.504 - curveWidth/2);
+    final double dipEnd = size.width * (0.5 + curveWidth/2);
+    final double dipCenter = size.width * 0.50;
+    final double dipDepth = 30; // 깊이
+
+    path.lineTo(dipStart, 0);
+
     path.cubicTo(
-      size.width * 0.43,
-      0,
-      size.width * 0.46,
-      15,
-      size.width * 0.5,
-      35,
+      dipStart + size.width * 0.02, 0,                 // 제어점1
+      dipCenter - size.width * 0.02, dipDepth,         // 제어점2
+      dipCenter, dipDepth                              // 중앙
     );
     path.cubicTo(
-      size.width * 0.54,
-      15,
-      size.width * 0.57,
-      0,
-      size.width * 0.63,
-      0,
+      dipCenter + size.width * 0.02, dipDepth,         // 제어점3
+      dipEnd - size.width * 0.02, 0,                   // 제어점4
+      dipEnd, 0                                        // 끝점
     );
-    path.lineTo(size.width - 15, 0);
-    path.quadraticBezierTo(size.width, 0, size.width, 15);
+
+    path.lineTo(size.width - 20, 0);
+    path.quadraticBezierTo(size.width, 0, size.width, 20);
     path.lineTo(size.width, size.height);
     path.lineTo(0, size.height);
     path.close();
 
-    canvas.drawShadow(path, Colors.black.withOpacity(0.08), 6, false);
+    canvas.drawShadow(path, Colors.black.withOpacity(0.09), 8, false);
     canvas.drawPath(path, paint);
   }
 
@@ -164,7 +164,7 @@ class _NavBarBgPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// 네비 아이콘 (공통)
+// 네비 아이콘
 class _NavBarIcon extends StatelessWidget {
   final IconData? icon;
   final Widget? custom;
@@ -173,7 +173,6 @@ class _NavBarIcon extends StatelessWidget {
   final VoidCallback onTap;
 
   const _NavBarIcon({
-    super.key,
     this.icon,
     this.custom,
     required this.isActive,
@@ -188,7 +187,7 @@ class _NavBarIcon extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        child: Center(child: custom ?? Icon(icon, size: 28, color: color)),
+        child: Center(child: custom ?? Icon(icon, size: 22, color: color)),
       ),
     );
   }
