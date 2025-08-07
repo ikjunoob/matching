@@ -130,7 +130,7 @@ class _HomeScreenState extends State {
   // 추천 탭 화면 구성
   Widget _buildRecommendTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100), // ← 하단 여백 70~80 추천
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -248,17 +248,17 @@ class _HomeScreenState extends State {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildUser(
-                  "https://randomuser.me/api/portraits/women/44.jpg", // 여성
+                  "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=facearea&w=200&q=80", // 여성
                   "제니",
                   250,
                 ),
                 _buildUser(
-                  "https://randomuser.me/api/portraits/men/36.jpg", // 남성
+                  "https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=200&q=80", // 남성
                   "라이언",
                   210,
                 ),
                 _buildUser(
-                  "https://randomuser.me/api/portraits/women/68.jpg", // 여성
+                  "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=facearea&w=200&q=80", // 여성
                   "클로이",
                   180,
                 ),
@@ -479,7 +479,25 @@ class _HomeScreenState extends State {
       padding: const EdgeInsets.only(right: 16),
       child: Column(
         children: [
-          CircleAvatar(radius: 35, backgroundImage: NetworkImage(imageUrl)),
+          // 👇 원형 프로필 (ClipOval + Image.network)
+          ClipOval(
+            child: Image.network(
+              imageUrl,
+              width: 70, // 원 모양 프레임의 크기
+              height: 70,
+              fit: BoxFit.cover, // 동그란 프레임 안에 이미지를 꽉 채움
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 70,
+                height: 70,
+                color: Colors.grey[300],
+                child: const Icon(
+                  Icons.person,
+                  size: 32,
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 4),
           Text(name, style: const TextStyle(fontSize: 14)),
           Row(
