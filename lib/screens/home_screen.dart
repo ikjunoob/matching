@@ -1,17 +1,13 @@
-// home_screen.dart
 import 'package:flutter/material.dart';
 import 'notification_screen.dart';
+import 'package:remixicon/remixicon.dart';
+import 'chat_list_screen.dart'; // ← 이거 반드시 추가
 
-// 홈 화면 위젯 (탭 구조 포함)
 class HomeScreen extends StatefulWidget {
   final int tabIndex;
   final void Function(int tabIndex)? onTabChange;
 
-  const HomeScreen({
-    super.key,
-    this.tabIndex = 0,
-    this.onTabChange,
-  });
+  const HomeScreen({super.key, this.tabIndex = 0, this.onTabChange});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -71,8 +67,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 4),
                 Expanded(child: Container()),
+                // 채팅 아이콘 (remixicon)
                 IconButton(
-                  icon: const Icon(Icons.notifications_none),
+                  icon: const Icon(Remix.chat_3_line, size: 26), // 말풍선+점3개
+                  tooltip: '채팅',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChatListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.notifications_none, size: 26),
+                  tooltip: '알림',
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -175,28 +185,32 @@ class _HomeScreenState extends State<HomeScreen> {
               physics: const BouncingScrollPhysics(),
               children: [
                 _buildCard(
-                  image: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=600&q=80',
+                  image:
+                      'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=600&q=80',
                   title: "함께 성장하는 독서 모임",
                   tags: "#독서 #자기계발",
                   heartCount: 120,
                   onArrowTap: () => print("함께 성장하는 독서 모임: 상세 준비중"),
                 ),
                 _buildCard(
-                  image: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
+                  image:
+                      'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
                   title: "주말엔 브런치",
                   tags: "#맛집 #취향공유",
                   heartCount: 88,
                   onArrowTap: () => print("주말엔 브런치: 상세 준비중"),
                 ),
                 _buildCard(
-                  image: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
+                  image:
+                      'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
                   title: "토요일엔 스터디/기타 긴 이름 예시",
                   tags: "#스터디 #개발 #네트워킹",
                   heartCount: 77,
                   onArrowTap: () => print("토요일엔 스터디/기타 긴 이름 예시: 상세 준비중"),
                 ),
                 _buildCard(
-                  image: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
+                  image:
+                      'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80',
                   title: "문화 탐방 모임",
                   tags: "#전시 #문화생활",
                   heartCount: 65,
@@ -220,28 +234,32 @@ class _HomeScreenState extends State<HomeScreen> {
               physics: const BouncingScrollPhysics(),
               children: [
                 _buildCard(
-                  image: 'https://images.unsplash.com/photo-1508264165352-258db2ebd59b?auto=format&fit=crop&w=8',
+                  image:
+                      'https://images.unsplash.com/photo-1508264165352-258db2ebd59b?auto=format&fit=crop&w=8',
                   title: "별 보러 가는 언덕",
                   tags: "#자연 #밤하늘",
                   heartCount: 95,
                   onArrowTap: () => print("별 보러 가는 언덕: 상세 준비중"),
                 ),
                 _buildCard(
-                  image: 'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
+                  image:
+                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
                   title: "조용한 카페",
                   tags: "#공부 #카페 #스터디",
                   heartCount: 76,
                   onArrowTap: () => print("조용한 카페: 상세 준비중"),
                 ),
                 _buildCard(
-                  image: 'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
+                  image:
+                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
                   title: "조용한 카페",
                   tags: "#공부 #카페 #스터디",
                   heartCount: 76,
                   onArrowTap: () => print("조용한 카페: 상세 준비중"),
                 ),
                 _buildCard(
-                  image: 'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
+                  image:
+                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
                   title: "조용한 카페",
                   tags: "#공부 #카페 #스터디",
                   heartCount: 76,
@@ -320,7 +338,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.45),
                     borderRadius: BorderRadius.circular(7),
@@ -331,25 +352,38 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(width: 2),
                       Text(
                         "5/10명",
-                        style: const TextStyle(color: Colors.white, fontSize: 11),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.45),
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.favorite, size: 13, color: Colors.redAccent),
+                      const Icon(
+                        Icons.favorite,
+                        size: 13,
+                        color: Colors.redAccent,
+                      ),
                       const SizedBox(width: 2),
                       Text(
                         "$heartCount",
-                        style: const TextStyle(color: Colors.white, fontSize: 11),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
@@ -413,7 +447,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             return Padding(
                               padding: const EdgeInsets.only(right: 6),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.black.withOpacity(0.35),
                                   borderRadius: BorderRadius.circular(7),
@@ -517,7 +554,10 @@ class SectionTitle extends StatelessWidget {
         if (onMoreTap != null)
           GestureDetector(
             onTap: onMoreTap,
-            child: Text("더보기 >", style: TextStyle(color: const Color.fromARGB(255, 36, 36, 36))),
+            child: Text(
+              "더보기 >",
+              style: TextStyle(color: const Color.fromARGB(255, 36, 36, 36)),
+            ),
           ),
       ],
     );
