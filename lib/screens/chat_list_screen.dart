@@ -20,7 +20,21 @@ class ChatListScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text("채팅", style: TextStyle(color: Colors.black)),
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            "채팅",
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              height: 1.1,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+        titleSpacing: 0,
+        toolbarHeight: 48, // NotificationScreen과 동일
       ),
       body: ListView.separated(
         itemCount: chatRooms.length,
@@ -43,7 +57,7 @@ class ChatListScreen extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
             ),
             onTap: () {
-              // 추후 채팅방으로 이동 등 구현
+              // 추후 채팅방 이동 구현
             },
           );
         },

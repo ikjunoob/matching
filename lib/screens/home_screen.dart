@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(child: Container()), // 오른쪽 아이콘과의 거리 확보
                 // [우측] 채팅 아이콘 (말풍선 아이콘)
                 IconButton(
-                  icon: const Icon(Remix.chat_3_line, size: 26),
+                  icon: const Icon(Remix.chat_3_line, size: 23),
                   tooltip: '채팅',
                   onPressed: () {
                     // 채팅 리스트 화면으로 이동
