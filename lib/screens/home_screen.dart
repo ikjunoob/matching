@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'notification_screen.dart'; // 알림(Notifications) 화면 연결용
-import 'package:remixicon/remixicon.dart'; // Remix 아이콘 사용을 위한 패키지
+// Remix 아이콘 사용을 위한 패키지
 import 'chat_list_screen.dart'; // 채팅 리스트 화면 연결용
 import 'dart:ui';
 // CalendarScreen import
@@ -75,10 +75,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(child: Container()), // 오른쪽 아이콘과의 거리 확보
                 // [우측] 채팅 아이콘 (말풍선 아이콘)
                 IconButton(
-                  icon: const Icon(Remix.chat_3_line, size: 23),
+                  icon: Image.asset(
+                    'assets/icons/chat_icon.png',
+                    width: 24,
+                    height: 24,
+                  ),
                   tooltip: '채팅',
                   onPressed: () {
-                    // 채팅 리스트 화면으로 이동
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -87,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
+
                 // [우측] 알림 아이콘 (종 모양 아이콘)
                 IconButton(
                   icon: const Icon(Icons.notifications_none, size: 26),
