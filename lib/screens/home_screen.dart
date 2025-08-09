@@ -3,7 +3,7 @@ import 'notification_screen.dart'; // 알림(Notifications) 화면 연결용
 import 'package:remixicon/remixicon.dart'; // Remix 아이콘 사용을 위한 패키지
 import 'chat_list_screen.dart'; // 채팅 리스트 화면 연결용
 import 'dart:ui';
-import 'calendar_screen.dart'; // CalendarScreen import
+// CalendarScreen import
 
 // -------------------- HomeScreen: 메인 홈화면 전체를 담당하는 클래스 --------------------
 class HomeScreen extends StatefulWidget {
