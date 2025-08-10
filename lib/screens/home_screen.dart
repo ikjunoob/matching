@@ -48,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 239, 247, 255),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       // -------------------- 앱 상단 AppBar 부분 --------------------
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -59,16 +59,13 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // [좌측] 앱 로고 텍스트 ("CC,")
-                const SizedBox(width: 10),
-                const Padding(
-                  padding: EdgeInsets.only(left: 5),
-                  child: Text(
-                    "CC,",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.cyanAccent,
-                      fontSize: 32,
-                    ),
+                const SizedBox(width: 0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8), // 위아래 여백
+                  child: Image.asset(
+                    'assets/icons/main_logo.png',
+                    height: 80, // 로고 크기
+                    fit: BoxFit.contain,
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -146,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 2,
                           width: isSelected ? 24 : 0,
                           color: isSelected
-                              ? Colors.cyanAccent
+                              ? const Color(0xFFAED6F1)
                               : Colors.transparent,
                         ),
                       ],

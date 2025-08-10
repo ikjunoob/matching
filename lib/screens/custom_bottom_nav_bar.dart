@@ -14,7 +14,7 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = const Color.fromARGB(255, 0, 255, 251);
+    final accentColor = const Color(0xFFAED6F1);
     const navBarHeight = 52.0;
     const floatingSize = 60.0;
 
@@ -22,7 +22,7 @@ class CustomBottomNavBar extends StatelessWidget {
     final double floatingBottom = navBarHeight / 2 - 4; // (여기서 숫자 크게 할수록 위로!)
 
     return SizedBox(
-      height: navBarHeight + 24, // 충분한 여유
+      height: navBarHeight + 24, // 충분한 여유 
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
