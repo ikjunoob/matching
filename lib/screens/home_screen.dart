@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
-import 'notification_screen.dart'; // 알림(Notifications) 화면 연결용
-// Remix 아이콘 사용을 위한 패키지
-import 'chat_list_screen.dart'; // 채팅 리스트 화면 연결용
+import 'notification_screen.dart';
+import 'chat_list_screen.dart';
 import 'dart:ui';
-import 'ask_for_screen.dart'; // 새롭게 추가한 '구해요' 탭 화면
-import 'post_screen.dart'; // 새롭게 추가한 '게시글 작성' 화면
-// CalendarScreen import
+import 'ask_for_screen.dart';
+import 'post_screen.dart';
 
-// -------------------- HomeScreen: 메인 홈화면 전체를 담당하는 클래스 --------------------
 class HomeScreen extends StatefulWidget {
-  final int tabIndex; // 부모에서 받아오는 선택된 탭 인덱스 (기본값 0)
-  final void Function(int tabIndex)? onTabChange; // 탭 변경시 호출되는 콜백
+  final int tabIndex;
+  final void Function(int tabIndex)? onTabChange;
 
   const HomeScreen({super.key, this.tabIndex = 0, this.onTabChange});
 
@@ -18,10 +15,9 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-// -------------------- HomeScreen의 State (실제 화면/이벤트 처리) --------------------
 class _HomeScreenState extends State<HomeScreen> {
   late int _selectedTabIndex;
-  final List tabs = ['추천', '모임', '구해요', '장소']; // 상단 탭바에 들어갈 탭 이름
+  final List tabs = ['추천', '모임', '구해요', '장소'];
 
   @override
   void initState() {
@@ -39,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // [함수] 탭 클릭 시 처리
   void _onTabTap(int index) {
     setState(() {
       _selectedTabIndex = index;
@@ -51,7 +46,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-      // -------------------- 앱 상단 AppBar 부분 --------------------
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: Container(
@@ -60,19 +54,17 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // [좌측] 앱 로고 텍스트 ("CC,")
                 const SizedBox(width: 0),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8), // 위아래 여백
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Image.asset(
                     'assets/icons/main_logo.png',
-                    height: 80, // 로고 크기
+                    height: 80,
                     fit: BoxFit.contain,
                   ),
                 ),
                 const SizedBox(width: 4),
-                Expanded(child: Container()), // 오른쪽 아이콘과의 거리 확보
-                // [우측] 채팅 아이콘 (말풍선 아이콘)
+                const Spacer(),
                 IconButton(
                   icon: Image.asset(
                     'assets/icons/chat_icon.png',
@@ -89,13 +81,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
-
-                // [우측] 알림 아이콘 (종 모양 아이콘)
                 IconButton(
                   icon: const Icon(Icons.notifications_none, size: 26),
                   tooltip: '알림',
                   onPressed: () {
-                    // 알림 화면으로 이동
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -110,24 +99,33 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      // -------------------- 앱 전체 본문 --------------------
+
       body: Column(
         children: [
-          // [상단] 탭 바 (추천/모임/구해요/장소)
+          // 상단 탭바
           Container(
-            color: Colors.white,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                bottom: BorderSide(
+                  color: Color(0xFFE6E8EB), // 연한 회색 라인
+                  width: 1, // 1px
+                ),
+              ),
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: List.generate(tabs.length, (index) {
                 final isSelected = _selectedTabIndex == index;
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 20),
                   child: GestureDetector(
                     onTap: () => _onTabTap(index),
                     child: Column(
                       children: [
-                        // 탭 이름(텍스트)
+                        // 탭 텍스트
                         Text(
                           tabs[index],
                           style: TextStyle(
@@ -139,13 +137,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        // 탭 선택시 밑줄 애니메이션
+                        // 하단 강조선
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           height: 2,
                           width: isSelected ? 24 : 0,
                           color: isSelected
-                              ? const Color(0xFFAED6F1)
+                              ? const Color(0xFFAED6F1) // 선택 시 메인컬러
                               : Colors.transparent,
                         ),
                       ],
@@ -155,17 +153,48 @@ class _HomeScreenState extends State<HomeScreen> {
               }),
             ),
           ),
+
           const SizedBox(height: 8),
-          // [중앙] 각 탭별 실제 컨텐츠 영역 (아래 함수에서 결정)
+
+          // 탭별 컨텐츠
           Expanded(
             child: Builder(
               builder: (context) {
                 if (_selectedTabIndex == 0) {
-                  return _buildRecommendTab(); // 추천 탭
+                  return _buildRecommendTab();
                 } else if (_selectedTabIndex == 1) {
                   return const Center(child: Text("모임 탭 더미"));
                 } else if (_selectedTabIndex == 2) {
-                  return const AskForScreen();
+                  // ✅ 컨텐츠 앞에 FAB를 고정 배치 (Stack + Positioned)
+                  return Stack(
+                    children: [
+                      const AskForScreen(),
+                      Positioned(
+                        right: 16,
+                        bottom: 16,
+                        child: SafeArea(
+                          child: FloatingActionButton(
+                            heroTag: "askFab",
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const PostScreen(),
+                                ),
+                              );
+                            },
+                            backgroundColor: const Color(0xFFAED6F1),
+                            shape: const CircleBorder(),
+                            child: const Icon(
+                              Icons.add,
+                              size: 30,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
                 } else {
                   return const Center(child: Text("장소 탭 더미"));
                 }
@@ -177,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // -------------------- [추천] 탭 화면 구성 (카드, 장소, 핫한 유저) --------------------
+  // -------------------- [추천] 탭 화면 구성 --------------------
   Widget _buildRecommendTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -185,10 +214,8 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 15),
-          // [추천 모임] 섹션 타이틀
           SectionTitle(title: "✨ 이런 모임은 어때요?", onMoreTap: () => _onTabTap(1)),
           const SizedBox(height: 8),
-          // [추천 모임] 카드 리스트 (가로 스크롤)
           SizedBox(
             height: 160,
             child: ListView(
@@ -231,10 +258,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          // [추천 장소] 섹션 타이틀
           SectionTitle(title: "🎯 취향저격! 추천 장소", onMoreTap: () => _onTabTap(3)),
           const SizedBox(height: 8),
-          // [추천 장소] 카드 리스트 (가로 스크롤)
           SizedBox(
             height: 160,
             child: ListView(
@@ -277,10 +302,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          // [핫한 유저] 섹션 타이틀
           const SectionTitle(title: "🔥 지금 가장 핫한 유저"),
           const SizedBox(height: 20),
-          // [하단] 핫한 유저 프로필 리스트 (3명, 가로 Row)
           Padding(
             padding: const EdgeInsets.only(left: 26.0, right: 14.0),
             child: Row(
@@ -365,15 +388,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: Row(
-                    children: [
-                      const Icon(Icons.group, size: 13, color: Colors.white),
-                      const SizedBox(width: 2),
+                    children: const [
+                      Icon(Icons.group, size: 13, color: Colors.white),
+                      SizedBox(width: 2),
                       Text(
                         "5/10명",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 11),
                       ),
                     ],
                   ),
@@ -435,29 +455,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 tagList.length <= 2
                     ? Wrap(
                         spacing: 6,
-                        children: tagList
-                            .where((tag) => tag.isNotEmpty)
-                            .map(
-                              (tag) => Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.35),
-                                  borderRadius: BorderRadius.circular(7),
-                                ),
-                                child: Text(
-                                  tag.startsWith('#') ? tag : '#$tag',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                        children: tagList.where((tag) => tag.isNotEmpty).map((
+                          tag,
+                        ) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.35),
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                            child: Text(
+                              tag.startsWith('#') ? tag : '#$tag',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
                               ),
-                            )
-                            .toList(),
+                            ),
+                          );
+                        }).toList(),
                       )
                     : SizedBox(
                         height: 24,
@@ -529,7 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 16),
       child: GestureDetector(
-        // [핫한 유저] 프로필 클릭 시 → 상세 팝업 표시
+        // 프로필 클릭 시 상세 팝업
         onTap: () {
           showGeneralDialog(
             context: context,
@@ -560,7 +579,6 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         child: Column(
           children: [
-            // [유저 프로필 사진]
             ClipOval(
               child: Image.network(
                 imageUrl,
@@ -580,9 +598,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            // [유저 닉네임]
             Text(name, style: const TextStyle(fontSize: 14)),
-            // [유저 좋아요(하트) 수]
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -594,6 +610,35 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// -------------------- 각 섹션별 타이틀 & "더보기" 버튼 위젯 --------------------
+class SectionTitle extends StatelessWidget {
+  final String title;
+  final VoidCallback? onMoreTap;
+
+  const SectionTitle({super.key, required this.title, this.onMoreTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        if (onMoreTap != null)
+          GestureDetector(
+            onTap: onMoreTap,
+            child: const Text(
+              "더보기 >",
+              style: TextStyle(color: Color.fromARGB(255, 36, 36, 36)),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -638,7 +683,7 @@ class UserDetailPopup extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: Stack(
             children: [
-              // 1. 배경: 사용자 이미지 + 블러 효과 (Glassmorphism)
+              // 배경 이미지
               Positioned.fill(
                 child: Image.network(
                   imageUrl,
@@ -647,6 +692,7 @@ class UserDetailPopup extends StatelessWidget {
                       Container(color: Colors.grey[800]),
                 ),
               ),
+              // 블러 + 그라데이션 오버레이
               Positioned.fill(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
@@ -664,17 +710,15 @@ class UserDetailPopup extends StatelessWidget {
                   ),
                 ),
               ),
-              // 2. 콘텐츠: 프로필 정보, 자기소개, 버튼 등
+              // 콘텐츠
               Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    // --- 상단: 프로필 사진, 닉네임, 태그 ---
                     Column(
                       children: [
                         const SizedBox(height: 10),
-                        // 프로필 이미지
                         CircleAvatar(
                           radius: 55,
                           backgroundColor: Colors.white.withOpacity(0.3),
@@ -686,7 +730,6 @@ class UserDetailPopup extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // ✅ 유저 이름 (검은 pill 박스)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
@@ -714,7 +757,6 @@ class UserDetailPopup extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 13),
-                        // ✅ 태그 (검은 pill 박스)
                         Wrap(
                           spacing: 8,
                           runSpacing: 6,
@@ -757,7 +799,7 @@ class UserDetailPopup extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // --- 중앙: 자기소개 (검은 pill 박스) ---
+                    // 자기소개
                     Container(
                       margin: const EdgeInsets.only(top: 26, bottom: 8),
                       padding: const EdgeInsets.symmetric(
@@ -786,7 +828,7 @@ class UserDetailPopup extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    // --- 하단: 좋아요 수, CTA 버튼 ---
+                    // 하단 CTA
                     Column(
                       children: [
                         Container(
@@ -800,16 +842,16 @@ class UserDetailPopup extends StatelessWidget {
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
+                            children: const [
+                              Icon(
                                 Icons.favorite,
                                 color: Colors.redAccent,
                                 size: 18,
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: 6),
                               Text(
-                                "$likes Likes",
-                                style: const TextStyle(
+                                "Likes",
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
@@ -834,9 +876,7 @@ class UserDetailPopup extends StatelessWidget {
                                     vertical: 16,
                                   ),
                                 ),
-                                onPressed: () {
-                                  print("$name 프로필 보기 클릭");
-                                },
+                                onPressed: () {},
                                 child: const Text(
                                   "프로필 보기",
                                   style: TextStyle(
@@ -858,9 +898,7 @@ class UserDetailPopup extends StatelessWidget {
                                     vertical: 16,
                                   ),
                                 ),
-                                onPressed: () {
-                                  print("$name 채팅하기 클릭");
-                                },
+                                onPressed: () {},
                                 child: const Text(
                                   "채팅하기",
                                   style: TextStyle(
@@ -882,37 +920,6 @@ class UserDetailPopup extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-// -------------------- 각 섹션별 타이틀 & "더보기" 버튼 위젯 --------------------
-class SectionTitle extends StatelessWidget {
-  final String title;
-  final VoidCallback? onMoreTap;
-
-  const SectionTitle({super.key, required this.title, this.onMoreTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // [타이틀 텍스트]
-        Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        // ["더보기 >" 버튼]
-        if (onMoreTap != null)
-          GestureDetector(
-            onTap: onMoreTap,
-            child: Text(
-              "더보기 >",
-              style: TextStyle(color: const Color.fromARGB(255, 36, 36, 36)),
-            ),
-          ),
-      ],
     );
   }
 }

@@ -22,7 +22,7 @@ class CustomBottomNavBar extends StatelessWidget {
     final double floatingBottom = navBarHeight / 2 - 4; // (여기서 숫자 크게 할수록 위로!)
 
     return SizedBox(
-      height: navBarHeight + 24, // 충분한 여유 
+      height: navBarHeight + 24, // 충분한 여유
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
@@ -132,22 +132,28 @@ class _NavBarBgPainter extends CustomPainter {
 
     // 파인 부분 시작/끝 (더 좁게!)
     final double curveWidth = 0.20; // 움푹 파인 곡선 전체 폭 비율
-    final double dipStart = size.width * (0.504 - curveWidth/2);
-    final double dipEnd = size.width * (0.5 + curveWidth/2);
+    final double dipStart = size.width * (0.504 - curveWidth / 2);
+    final double dipEnd = size.width * (0.5 + curveWidth / 2);
     final double dipCenter = size.width * 0.50;
     final double dipDepth = 30; // 깊이
 
     path.lineTo(dipStart, 0);
 
     path.cubicTo(
-      dipStart + size.width * 0.02, 0,                 // 제어점1
-      dipCenter - size.width * 0.02, dipDepth,         // 제어점2
-      dipCenter, dipDepth                              // 중앙
+      dipStart + size.width * 0.02,
+      0, // 제어점1
+      dipCenter - size.width * 0.02,
+      dipDepth, // 제어점2
+      dipCenter,
+      dipDepth, // 중앙
     );
     path.cubicTo(
-      dipCenter + size.width * 0.02, dipDepth,         // 제어점3
-      dipEnd - size.width * 0.02, 0,                   // 제어점4
-      dipEnd, 0                                        // 끝점
+      dipCenter + size.width * 0.02,
+      dipDepth, // 제어점3
+      dipEnd - size.width * 0.02,
+      0, // 제어점4
+      dipEnd,
+      0, // 끝점
     );
 
     path.lineTo(size.width - 20, 0);
