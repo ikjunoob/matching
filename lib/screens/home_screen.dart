@@ -3,6 +3,8 @@ import 'notification_screen.dart'; // 알림(Notifications) 화면 연결용
 // Remix 아이콘 사용을 위한 패키지
 import 'chat_list_screen.dart'; // 채팅 리스트 화면 연결용
 import 'dart:ui';
+import 'ask_for_screen.dart'; // 새롭게 추가한 '구해요' 탭 화면
+import 'post_screen.dart'; // 새롭게 추가한 '게시글 작성' 화면
 // CalendarScreen import
 
 // -------------------- HomeScreen: 메인 홈화면 전체를 담당하는 클래스 --------------------
@@ -163,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 } else if (_selectedTabIndex == 1) {
                   return const Center(child: Text("모임 탭 더미"));
                 } else if (_selectedTabIndex == 2) {
-                  return const Center(child: Text("구해요 탭 더미"));
+                  return const AskForScreen();
                 } else {
                   return const Center(child: Text("장소 탭 더미"));
                 }
