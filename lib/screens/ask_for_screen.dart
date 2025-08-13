@@ -6,13 +6,20 @@ class AskForScreen extends StatefulWidget {
   @override
   State<AskForScreen> createState() => _AskForScreenState();
 }
+// “마감 임박” 기준은 24시간 이내로 설정했어. 필요하면 Duration(hours: 24) 값을 바꿔서 조절하면 돼.
 
+// 마감 글은 제목에 취소선, 카드 전체 opacity 0.55, 좋아요 탭 시 스낵바 노출로 상호작용 차단.
+
+// 진행중이면서 마감일이 있는 글은 “D-n” 또는 “마감까지 n시간 m분”을 보여줘.
+
+// 정렬은 현재 로직 그대로 “마감 임박/진행중 → 마감 지남 → 마감 없음” 순서로 정렬되고, 같은 그룹에서는 마감이 가까운 순서가 위로 와.
 class _AskForScreenState extends State<AskForScreen> {
   String _selectedSort = '최신순';
   String _selectedCategory = '전체';
 
   final List<String> _categories = ['전체', '스터디', '재능공유', '물품대여', '운동메이트'];
 
+  // 더미 데이터: createdAt, deadlineAt 포함
   final List<Map<String, dynamic>> _posts = [
     {
       'image':
@@ -24,6 +31,8 @@ class _AskForScreenState extends State<AskForScreen> {
       'likes': 71,
       'category': '운동메이트',
       'isLiked': true,
+      'createdAt': DateTime.now().subtract(const Duration(hours: 4)),
+      'deadlineAt': DateTime.now().add(const Duration(days: 2)),
     },
     {
       'image':
@@ -35,6 +44,8 @@ class _AskForScreenState extends State<AskForScreen> {
       'likes': 79,
       'category': '물품대여',
       'isLiked': false,
+      'createdAt': DateTime.now().subtract(const Duration(days: 1, hours: 3)),
+      'deadlineAt': null, // 마감 없음
     },
     {
       'image':
@@ -46,6 +57,8 @@ class _AskForScreenState extends State<AskForScreen> {
       'likes': 160,
       'category': '맛집',
       'isLiked': false,
+      'createdAt': DateTime.now().subtract(const Duration(hours: 10)),
+      'deadlineAt': DateTime.now().add(const Duration(hours: 6)), // 임박 케이스
     },
     {
       'image':
@@ -57,6 +70,8 @@ class _AskForScreenState extends State<AskForScreen> {
       'likes': 123,
       'category': '물품대여',
       'isLiked': false,
+      'createdAt': DateTime.now().subtract(const Duration(days: 3)),
+      'deadlineAt': DateTime.now().subtract(const Duration(days: 1)), // 마감 지남
     },
     {
       'image':
@@ -68,6 +83,8 @@ class _AskForScreenState extends State<AskForScreen> {
       'likes': 26,
       'category': '스터디',
       'isLiked': false,
+      'createdAt': DateTime.now().subtract(const Duration(hours: 2)),
+      'deadlineAt': DateTime.now().add(const Duration(days: 7)),
     },
   ];
 
@@ -78,42 +95,97 @@ class _AskForScreenState extends State<AskForScreen> {
     });
   }
 
+  // 정렬 적용
+  List<Map<String, dynamic>> _applySort(List<Map<String, dynamic>> list) {
+    final sorted = [...list];
+    final now = DateTime.now();
+
+    int nullSafeCompare<T>(
+      T? a,
+      T? b,
+      int Function(T x, T y) cmp, {
+      bool nullsLast = true,
+    }) {
+      if (a == null && b == null) return 0;
+      if (a == null) return nullsLast ? 1 : -1;
+      if (b == null) return nullsLast ? -1 : 1;
+      return cmp(a, b);
+    }
+
+    switch (_selectedSort) {
+      case '최신순':
+        sorted.sort(
+          (a, b) => nullSafeCompare<DateTime>(
+            b['createdAt'],
+            a['createdAt'],
+            (x, y) => x.compareTo(y),
+          ),
+        );
+        break;
+      case '인기순':
+        sorted.sort((a, b) => (b['likes'] as int).compareTo(a['likes'] as int));
+        break;
+      case '마감순':
+        int rank(Map<String, dynamic> p) {
+          final DateTime? d = p['deadlineAt'];
+          if (d == null) return 3; // 마감 없음: 최하
+          if (d.isBefore(now)) return 2; // 이미 마감: 아래
+          return 1; // 진행중: 최우선
+        }
+
+        sorted.sort((a, b) {
+          final ra = rank(a), rb = rank(b);
+          if (ra != rb) return ra.compareTo(rb);
+          // 같은 그룹끼리는 가까운 마감이 먼저
+          return nullSafeCompare<DateTime>(
+            a['deadlineAt'],
+            b['deadlineAt'],
+            (x, y) => x.compareTo(y),
+          );
+        });
+        break;
+    }
+    return sorted;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final visiblePosts = _selectedCategory == '전체'
+    final filtered = _selectedCategory == '전체'
         ? _posts
         : _posts.where((p) => p['category'] == _selectedCategory).toList();
+
+    final visiblePosts = _applySort(filtered);
 
     return Column(
       children: [
         _buildSortAndCategoryBar(),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 140),
-            itemCount: visiblePosts.length,
-            itemBuilder: (context, index) {
-              final post = visiblePosts[index];
-              final originalIdx = _posts.indexWhere((p) => identical(p, post));
-              final idx = originalIdx == -1 ? index : originalIdx;
-              return AskForPostCard(
-                post: post,
-                onLikeTap: () => _toggleLike(idx),
-              );
-            },
+          child: Container(
+            color: const Color(0xFFF6F7F9), // ✅ 리스트 영역 배경색
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 140),
+              itemCount: visiblePosts.length,
+              itemBuilder: (context, index) {
+                final post = visiblePosts[index];
+                final originalIdx = _posts.indexWhere(
+                  (p) => identical(p, post),
+                );
+                final idx = originalIdx == -1 ? index : originalIdx;
+                return AskForPostCard(
+                  post: post,
+                  onLikeTap: () => _toggleLike(idx),
+                );
+              },
+            ),
           ),
         ),
       ],
     );
   }
 
-  // ---- 상단 정렬 버튼 + 카테고리 메뉴(커스텀 팝업) ----
   Widget _buildSortAndCategoryBar() {
     const accent = Color(0xFF00FFFB);
-
-    const chipHeight = 28.0;
-    const chipRadius = 14.0;
-    const chipHPad = 10.0;
-    const chipVPad = 5.0;
+    const chipHeight = 28.0, chipRadius = 14.0, chipHPad = 10.0, chipVPad = 5.0;
 
     return Container(
       decoration: const BoxDecoration(color: Colors.white),
@@ -122,7 +194,6 @@ class _AskForScreenState extends State<AskForScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 정렬 칩
           Row(
             children: ['최신순', '인기순', '마감순'].map((sort) {
               final selected = _selectedSort == sort;
@@ -136,8 +207,8 @@ class _AskForScreenState extends State<AskForScreen> {
                     padding: EdgeInsets.only(
                       left: chipHPad,
                       right: chipHPad,
-                      top: chipVPad - 2, // 기존보다 위쪽 여백 줄이기
-                      bottom: chipVPad + 2, // 아래쪽 여백 늘려서 글자 올라가게
+                      top: chipVPad - 2,
+                      bottom: chipVPad + 2,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -172,8 +243,6 @@ class _AskForScreenState extends State<AskForScreen> {
               );
             }).toList(),
           ),
-
-          // 카테고리 칩 + showMenu 팝업
           _CategoryChipMenu(
             label: _selectedCategory,
             items: _categories,
@@ -239,12 +308,7 @@ class _CategoryChipMenu extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          // ✨ 폭 제어 (예: 내용에 더 타이트하게)
-          constraints: const BoxConstraints(
-            minWidth: 0, // 기본 최소폭 해제
-            maxWidth: 130, // 원하는 최대폭으로 제한 (수치 조절)
-          ),
-
+          constraints: const BoxConstraints(minWidth: 0, maxWidth: 130),
           items: items.map((e) {
             final isSel = e == label;
             return PopupMenuItem<String>(
@@ -262,7 +326,6 @@ class _CategoryChipMenu extends StatelessWidget {
   }
 }
 
-// Hover 전용 타일 (메뉴 항목에 사용)
 class _HoverMenuTile extends StatefulWidget {
   final String text;
   final bool isSelected;
@@ -284,7 +347,7 @@ class _HoverMenuTileState extends State<_HoverMenuTile> {
 
   @override
   Widget build(BuildContext context) {
-    final bool active = _hovered || _tapped || widget.isSelected;
+    final active = _hovered || _tapped || widget.isSelected;
 
     return Listener(
       onPointerDown: (_) => setState(() => _tapped = true),
@@ -304,7 +367,7 @@ class _HoverMenuTileState extends State<_HoverMenuTile> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, // 좌: 텍스트, 우: 체크
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
@@ -336,7 +399,6 @@ class _HoverMenuTileState extends State<_HoverMenuTile> {
   }
 }
 
-// 칩 모양 버튼(정렬 칩과 동일 규격)
 class _ChipButton extends StatelessWidget {
   final String label;
   final double height, radius, hPad, vPad;
@@ -414,6 +476,34 @@ class AskForPostCard extends StatelessWidget {
     required this.onLikeTap,
   });
 
+  bool get _hasDeadline => post['deadlineAt'] is DateTime;
+  bool get _isExpired {
+    if (!_hasDeadline) return false;
+    return (post['deadlineAt'] as DateTime).isBefore(DateTime.now());
+  }
+
+  bool get _isUrgent {
+    if (!_hasDeadline) return false;
+    final d = post['deadlineAt'] as DateTime;
+    final now = DateTime.now();
+    return d.isAfter(now) && d.difference(now) <= const Duration(hours: 24);
+  }
+
+  String? _remainText() {
+    if (!_hasDeadline) return null;
+    final d = post['deadlineAt'] as DateTime;
+    final now = DateTime.now();
+    if (d.isBefore(now)) return '마감됨';
+    final diff = d.difference(now);
+    if (diff.inHours < 24) {
+      final h = diff.inHours;
+      final m = diff.inMinutes % 60;
+      return '마감까지 ${h}시간 ${m}분';
+    }
+    final days = diff.inDays;
+    return 'D-${days}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final String category =
@@ -421,158 +511,241 @@ class AskForPostCard extends StatelessWidget {
         ? post['category']
         : '기타';
 
+    // 2) 마감 글 흐리게
+    final double opacity = _isExpired ? 0.55 : 1.0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Stack(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 썸네일
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    image: post['image'] != null
-                        ? DecorationImage(
-                            image: NetworkImage(post['image']),
-                            fit: BoxFit.cover,
+      child: Opacity(
+        opacity: opacity,
+        child: Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 썸네일
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      image: post['image'] != null
+                          ? DecorationImage(
+                              image: NetworkImage(post['image']),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                      color: Colors.grey[200],
+                    ),
+                    child: post['image'] == null
+                        ? const Center(
+                            child: Text(
+                              'No Image',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
                           )
                         : null,
-                    color: Colors.grey[200],
                   ),
-                  child: post['image'] == null
-                      ? const Center(
-                          child: Text(
-                            'No Image',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                // 본문
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 제목 + 하트
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              post['title'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                  const SizedBox(width: 12),
+                  // 본문
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 제목 + 하트
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                post['title'],
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  decoration: _isExpired
+                                      ? TextDecoration.lineThrough
+                                      : TextDecoration.none,
+                                  decorationThickness: 1.2,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: onLikeTap,
-                            child: Icon(
-                              post['isLiked']
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: post['isLiked'] ? Colors.red : Colors.grey,
-                              size: 24,
+                            GestureDetector(
+                              onTap: () {
+                                // 3) 마감 글 인터랙션 비활성
+                                if (_isExpired) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('이미 마감된 글입니다.'),
+                                      duration: Duration(milliseconds: 1200),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                onLikeTap();
+                              },
+                              child: Icon(
+                                post['isLiked']
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: post['isLiked']
+                                    ? Colors.red
+                                    : Colors.grey,
+                                size: 24,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      // 태그
-                      Wrap(
-                        spacing: 4,
-                        runSpacing: 4,
-                        children: (post['tags'] as List<String>).map((tag) {
-                          return Text(
-                            '#$tag',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey[600],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 8),
-                      // 수치
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.chat_bubble_outline,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${post['comments']}',
-                            style: const TextStyle(
-                              fontSize: 11,
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+
+                        // 배지들: "마감 임박" / "마감" / 남은 시간
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            if (_isUrgent)
+                              const _Badge(
+                                label: '마감 임박',
+                                bg: Color(0xFFFFEAEA),
+                                fg: Color(0xFFD32F2F),
+                              ),
+                            if (_isExpired)
+                              const _Badge(
+                                label: '마감',
+                                bg: Color(0xFFEDEFF2),
+                                fg: Color(0xFF6B7280),
+                              ),
+                            if (!_isExpired && _hasDeadline)
+                              _Badge(
+                                label: _remainText()!,
+                                bg: const Color(0xFFE6FFFB),
+                                fg: const Color(0xFF006D6D),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+
+                        // 태그
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: (post['tags'] as List<String>).map((tag) {
+                            return Text(
+                              '#$tag',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey[600],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // 수치
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.chat_bubble_outline,
+                              size: 14,
                               color: Colors.grey,
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Icon(
-                            Icons.remove_red_eye_outlined,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${post['views']}',
-                            style: const TextStyle(
-                              fontSize: 11,
+                            const SizedBox(width: 4),
+                            Text(
+                              '${post['comments']}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Icon(
+                              Icons.remove_red_eye_outlined,
+                              size: 14,
                               color: Colors.grey,
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Icon(
-                            Icons.favorite,
-                            size: 14,
-                            color: Colors.redAccent,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${post['likes']}',
-                            style: const TextStyle(
-                              fontSize: 11,
+                            const SizedBox(width: 4),
+                            Text(
+                              '${post['views']}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Icon(
+                              Icons.favorite,
+                              size: 14,
                               color: Colors.redAccent,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                    ],
+                            const SizedBox(width: 4),
+                            Text(
+                              '${post['likes']}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.redAccent,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // 우하단 카테고리 배지 (작게)
-          Positioned(
-            right: 12,
-            bottom: 12,
-            child: _CategoryChip(label: category),
-          ),
-        ],
+            // 우하단 카테고리 배지
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: _CategoryChip(label: category),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final String label;
+  final Color bg, fg;
+  const _Badge({required this.label, required this.bg, required this.fg});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: fg,
+          height: 1.2,
+        ),
       ),
     );
   }
