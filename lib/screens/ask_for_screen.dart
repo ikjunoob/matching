@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'post_screen.dart';
 
 class AskForScreen extends StatefulWidget {
   const AskForScreen({super.key});
@@ -6,12 +7,10 @@ class AskForScreen extends StatefulWidget {
   @override
   State<AskForScreen> createState() => _AskForScreenState();
 }
+
 // “마감 임박” 기준은 24시간 이내로 설정했어. 필요하면 Duration(hours: 24) 값을 바꿔서 조절하면 돼.
-
 // 마감 글은 제목에 취소선, 카드 전체 opacity 0.55, 좋아요 탭 시 스낵바 노출로 상호작용 차단.
-
 // 진행중이면서 마감일이 있는 글은 “D-n” 또는 “마감까지 n시간 m분”을 보여줘.
-
 // 정렬은 현재 로직 그대로 “마감 임박/진행중 → 마감 지남 → 마감 없음” 순서로 정렬되고, 같은 그룹에서는 마감이 가까운 순서가 위로 와.
 class _AskForScreenState extends State<AskForScreen> {
   String _selectedSort = '최신순';
@@ -95,6 +94,21 @@ class _AskForScreenState extends State<AskForScreen> {
     });
   }
 
+  Future<void> _openCreateAndAppend() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PostScreen()),
+    );
+    if (result is Map<String, dynamic>) {
+      setState(() {
+        _posts.insert(0, result);
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('게시글이 등록되었습니다.')));
+    }
+  }
+
   // 정렬 적용
   List<Map<String, dynamic>> _applySort(List<Map<String, dynamic>> list) {
     final sorted = [...list];
@@ -156,104 +170,121 @@ class _AskForScreenState extends State<AskForScreen> {
 
     final visiblePosts = _applySort(filtered);
 
-    return Column(
-      children: [
-        _buildSortAndCategoryBar(),
-        Expanded(
-          child: Container(
-            color: const Color(0xFFF6F7F9), // ✅ 리스트 영역 배경색
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 140),
-              itemCount: visiblePosts.length,
-              itemBuilder: (context, index) {
-                final post = visiblePosts[index];
-                final originalIdx = _posts.indexWhere(
-                  (p) => identical(p, post),
-                );
-                final idx = originalIdx == -1 ? index : originalIdx;
-                return AskForPostCard(
-                  post: post,
-                  onLikeTap: () => _toggleLike(idx),
-                );
-              },
+    return Scaffold(
+      body: Column(
+        children: [
+          _buildSortAndCategoryBar(),
+          Expanded(
+            child: Container(
+              color: const Color(0xFFF6F7F9),
+              child: ListView.builder(
+                padding: const EdgeInsets.only(bottom: 140),
+                itemCount: visiblePosts.length,
+                itemBuilder: (context, index) {
+                  final post = visiblePosts[index];
+                  final originalIdx = _posts.indexWhere(
+                    (p) => identical(p, post),
+                  );
+                  final idx = originalIdx == -1 ? index : originalIdx;
+                  return AskForPostCard(
+                    post: post,
+                    onLikeTap: () => _toggleLike(idx),
+                  );
+                },
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
+  // ===== 상단 정렬/카테고리 바 (비율 스케일 적용) =====
   Widget _buildSortAndCategoryBar() {
+    const double scale = 0.8;
     const accent = Color(0xFF00FFFB);
-    const chipHeight = 28.0, chipRadius = 14.0, chipHPad = 10.0, chipVPad = 5.0;
+
+    final double chipRadius = 14.0 * scale;
+    final double chipHPad = 10.0 * scale;
+    final double chipVPad = 6.0 * scale;
+    final double fontSize = 12.0 * scale;
+    final double iconSize = 16.0 * scale;
 
     return Container(
       decoration: const BoxDecoration(color: Colors.white),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4.0 * scale),
       margin: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: ['최신순', '인기순', '마감순'].map((sort) {
-              final selected = _selectedSort == sort;
-              return Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(chipRadius),
-                  onTap: () => setState(() => _selectedSort = sort),
-                  child: Container(
-                    height: chipHeight,
-                    padding: EdgeInsets.only(
-                      left: chipHPad,
-                      right: chipHPad,
-                      top: chipVPad - 2,
-                      bottom: chipVPad + 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(chipRadius),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(
-                            selected ? 0.08 : 0.03,
-                          ),
-                          blurRadius: selected ? 6 : 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: selected
-                            ? Colors.black
-                            : const Color(0xFFE6E8EB),
+      child: Transform.translate(
+        offset: const Offset(0, -4), // 위로 4px 올림
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // 정렬 칩들
+            Row(
+              children: ['최신순', '인기순', '마감순'].map((sort) {
+                final selected = _selectedSort == sort;
+                return Padding(
+                  padding: EdgeInsets.only(right: 6.0 * scale),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(chipRadius),
+                    onTap: () => setState(() => _selectedSort = sort),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: chipHPad,
+                        vertical: chipVPad,
                       ),
-                    ),
-                    child: Text(
-                      sort,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(chipRadius),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(
+                              selected ? 0.08 : 0.03,
+                            ),
+                            blurRadius: selected ? 6 : 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: selected
+                              ? Colors.black
+                              : const Color(0xFFE6E8EB),
+                        ),
+                      ),
+                      child: Text(
+                        sort,
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          height: 1.1,
+                          color: Colors.black,
+                          fontWeight: selected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
-          _CategoryChipMenu(
-            label: _selectedCategory,
-            items: _categories,
-            onSelected: (v) => setState(() => _selectedCategory = v),
-            accent: accent,
-            height: chipHeight,
-            radius: chipRadius,
-            hPad: chipHPad,
-            vPad: chipVPad,
-          ),
-        ],
+                );
+              }).toList(),
+            ),
+
+            // 카테고리 칩 + 팝업
+            _CategoryChipMenu(
+              label: _selectedCategory,
+              items: _categories,
+              onSelected: (v) => setState(() => _selectedCategory = v),
+              accent: accent,
+              radius: chipRadius,
+              hPad: chipHPad,
+              vPad: chipVPad,
+              fontSize: fontSize,
+              iconSize: iconSize,
+              menuItemHeight: 40.0 * scale,
+              menuFontSize: 14.0 * scale,
+              maxMenuWidth: 130.0 * scale,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -265,27 +296,35 @@ class _CategoryChipMenu extends StatelessWidget {
   final List<String> items;
   final ValueChanged<String> onSelected;
   final Color accent;
-  final double height, radius, hPad, vPad;
+
+  // 비율 적용 파라미터
+  final double radius, hPad, vPad, fontSize, iconSize;
+  final double menuItemHeight, menuFontSize, maxMenuWidth;
 
   const _CategoryChipMenu({
     required this.label,
     required this.items,
     required this.onSelected,
     required this.accent,
-    required this.height,
     required this.radius,
     required this.hPad,
     required this.vPad,
+    required this.fontSize,
+    required this.iconSize,
+    required this.menuItemHeight,
+    required this.menuFontSize,
+    required this.maxMenuWidth,
   });
 
   @override
   Widget build(BuildContext context) {
     return _ChipButton(
       label: label,
-      height: height,
       radius: radius,
       hPad: hPad,
       vPad: vPad,
+      fontSize: fontSize,
+      iconSize: iconSize,
       onTap: (box) async {
         final overlay =
             Overlay.of(context).context.findRenderObject() as RenderBox;
@@ -308,14 +347,19 @@ class _CategoryChipMenu extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          constraints: const BoxConstraints(minWidth: 0, maxWidth: 130),
+          constraints: BoxConstraints(minWidth: 0, maxWidth: maxMenuWidth),
           items: items.map((e) {
             final isSel = e == label;
             return PopupMenuItem<String>(
               value: e,
-              height: 40,
+              height: menuItemHeight,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-              child: _HoverMenuTile(text: e, isSelected: isSel, accent: accent),
+              child: _HoverMenuTile(
+                text: e,
+                isSelected: isSel,
+                accent: accent,
+                fontSize: menuFontSize,
+              ),
             );
           }).toList(),
         );
@@ -330,11 +374,13 @@ class _HoverMenuTile extends StatefulWidget {
   final String text;
   final bool isSelected;
   final Color accent;
+  final double fontSize;
 
   const _HoverMenuTile({
     required this.text,
     required this.isSelected,
     required this.accent,
+    required this.fontSize,
   });
 
   @override
@@ -374,7 +420,8 @@ class _HoverMenuTileState extends State<_HoverMenuTile> {
                   widget.text,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: widget.fontSize,
+                    height: 1.1,
                     fontWeight: widget.isSelected
                         ? FontWeight.w700
                         : FontWeight.w500,
@@ -399,17 +446,19 @@ class _HoverMenuTileState extends State<_HoverMenuTile> {
   }
 }
 
+// 칩 버튼(고정 height 제거, 스케일 적용)
 class _ChipButton extends StatelessWidget {
   final String label;
-  final double height, radius, hPad, vPad;
+  final double radius, hPad, vPad, fontSize, iconSize;
   final void Function(RenderBox box) onTap;
 
   const _ChipButton({
     required this.label,
-    required this.height,
     required this.radius,
     required this.hPad,
     required this.vPad,
+    required this.fontSize,
+    required this.iconSize,
     required this.onTap,
   });
 
@@ -431,7 +480,6 @@ class _ChipButton extends StatelessWidget {
               onTap(box);
             },
             child: Container(
-              height: height,
               padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -443,16 +491,17 @@ class _ChipButton extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      height: 1.1,
                       color: Colors.black,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(
+                  SizedBox(width: 4 * (fontSize / 12.0)),
+                  Icon(
                     Icons.arrow_drop_down,
-                    size: 16,
+                    size: iconSize,
                     color: Colors.black,
                   ),
                 ],
@@ -498,10 +547,10 @@ class AskForPostCard extends StatelessWidget {
     if (diff.inHours < 24) {
       final h = diff.inHours;
       final m = diff.inMinutes % 60;
-      return '마감까지 ${h}시간 ${m}분';
+      return '마감까지 $h시간 $m분';
     }
     final days = diff.inDays;
-    return 'D-${days}';
+    return 'D-$days';
   }
 
   @override

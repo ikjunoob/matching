@@ -120,9 +120,18 @@ class CustomBottomNavBar extends StatelessWidget {
 class _NavBarBgPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    // 배경 Paint
     final paint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
+
+    // 위쪽 Border Paint (2px)
+    final topBorderPaint = Paint()
+      ..color = Colors
+          .grey
+          .shade200 // 경계선 색상
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
 
     final path = Path();
 
@@ -130,30 +139,30 @@ class _NavBarBgPainter extends CustomPainter {
     path.moveTo(0, 20);
     path.quadraticBezierTo(0, 0, 20, 0);
 
-    // 파인 부분 시작/끝 (더 좁게!)
-    final double curveWidth = 0.20; // 움푹 파인 곡선 전체 폭 비율
+    // 파인 부분 시작/끝
+    final double curveWidth = 0.20;
     final double dipStart = size.width * (0.504 - curveWidth / 2);
     final double dipEnd = size.width * (0.5 + curveWidth / 2);
     final double dipCenter = size.width * 0.50;
-    final double dipDepth = 30; // 깊이
+    final double dipDepth = 30;
 
     path.lineTo(dipStart, 0);
 
     path.cubicTo(
       dipStart + size.width * 0.02,
-      0, // 제어점1
+      0,
       dipCenter - size.width * 0.02,
-      dipDepth, // 제어점2
+      dipDepth,
       dipCenter,
-      dipDepth, // 중앙
+      dipDepth,
     );
     path.cubicTo(
       dipCenter + size.width * 0.02,
-      dipDepth, // 제어점3
+      dipDepth,
       dipEnd - size.width * 0.02,
-      0, // 제어점4
+      0,
       dipEnd,
-      0, // 끝점
+      0,
     );
 
     path.lineTo(size.width - 20, 0);
@@ -162,8 +171,35 @@ class _NavBarBgPainter extends CustomPainter {
     path.lineTo(0, size.height);
     path.close();
 
+    // 그림자 + 배경
     canvas.drawShadow(path, Colors.black.withOpacity(0.09), 8, false);
     canvas.drawPath(path, paint);
+
+    // ===== 위쪽 Border만 =====
+    final topBorderPath = Path();
+    topBorderPath.moveTo(0, 20);
+    topBorderPath.quadraticBezierTo(0, 0, 20, 0);
+    topBorderPath.lineTo(dipStart, 0);
+    topBorderPath.cubicTo(
+      dipStart + size.width * 0.02,
+      0,
+      dipCenter - size.width * 0.02,
+      dipDepth,
+      dipCenter,
+      dipDepth,
+    );
+    topBorderPath.cubicTo(
+      dipCenter + size.width * 0.02,
+      dipDepth,
+      dipEnd - size.width * 0.02,
+      0,
+      dipEnd,
+      0,
+    );
+    topBorderPath.lineTo(size.width - 20, 0);
+    topBorderPath.quadraticBezierTo(size.width, 0, size.width, 20);
+
+    canvas.drawPath(topBorderPath, topBorderPaint);
   }
 
   @override
