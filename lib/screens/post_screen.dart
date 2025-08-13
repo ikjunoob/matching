@@ -594,7 +594,7 @@ class _PostScreenState extends State<PostScreen> {
     if (diff.inDays >= 1) return "D-${diff.inDays}";
     final h = diff.inHours;
     final m = diff.inMinutes % 60;
-    return "마감까지 ${h}시간 ${m}분";
+    return "마감까지 $h시간 $m분";
   }
 
   Widget _pill(String text) {

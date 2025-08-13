@@ -48,8 +48,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (title.contains("초대")) return Icons.mail_outline;
     if (title.contains("이벤트")) return Icons.card_giftcard;
     if (title.contains("추천")) return Icons.thumb_up_alt_outlined;
-    if (title.contains("모임") || title.contains("동아리"))
+    if (title.contains("모임") || title.contains("동아리")) {
       return Icons.groups_2_outlined;
+    }
     return Icons.notifications_none;
   }
 

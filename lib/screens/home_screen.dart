@@ -100,63 +100,83 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
+      // body: Column(
       body: Column(
         children: [
-          // 상단 탭바
+          // ===== 상단 탭바 =====
           Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(
-                  color: Color(0xFFE6E8EB), // 연한 회색 라인
-                  width: 1, // 1px
+            color: Colors.white,
+            child: Stack(
+              children: [
+                // 회색 구분선: 항상 맨 아래 1px
+                const Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Color(0xFFE6E8EB),
+                  ),
                 ),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: List.generate(tabs.length, (index) {
-                final isSelected = _selectedTabIndex == index;
 
-                return Padding(
-                  padding: const EdgeInsets.only(right: 20),
-                  child: GestureDetector(
-                    onTap: () => _onTabTap(index),
-                    child: Column(
-                      children: [
-                        // 탭 텍스트
-                        Text(
-                          tabs[index],
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: isSelected ? Colors.black : Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        // 하단 강조선
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          height: 2,
-                          width: isSelected ? 24 : 0,
-                          color: isSelected
-                              ? const Color(0xFFAED6F1) // 선택 시 메인컬러
-                              : Colors.transparent,
-                        ),
-                      ],
+                // 탭들: 밑줄은 각 탭 컨테이너의 bottom border로 그려서
+                // 위 Divider와 '정확히 같은 y'에 겹치게 함
+                Padding(
+                  // 로고와 간격 벌어지는 문제 막으려고 top/bottom 여백 최소화
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                  child: SizedBox(
+                    height: 40, // 탭바 높이 (필요시 38~44로 조정 가능)
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: List.generate(tabs.length, (index) {
+                          final isSelected = _selectedTabIndex == index;
+                          return InkWell(
+                            onTap: () => _onTabTap(index),
+                            splashColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
+                            child: Container(
+                              padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                              // ✅ 선택 밑줄을 bottom border로: Divider와 완전 동일선상
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: isSelected
+                                        ? const Color(0xFFAED6F1)
+                                        : Colors.transparent,
+                                    width: 1, // 구분선과 동일 두께
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                tabs[index],
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: isSelected
+                                      ? Colors.black
+                                      : Colors.grey,
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
                     ),
                   ),
-                );
-              }),
+                ),
+              ],
             ),
           ),
 
+          // 👈 리스트 아이템 끝이므로 콤마 필수!
           const SizedBox(height: 8),
 
-          // 탭별 컨텐츠
+          // ===== 탭별 컨텐츠 =====
           Expanded(
             child: Builder(
               builder: (context) {
@@ -165,7 +185,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 } else if (_selectedTabIndex == 1) {
                   return const Center(child: Text("모임 탭 더미"));
                 } else if (_selectedTabIndex == 2) {
-                  // ✅ 컨텐츠 앞에 FAB를 고정 배치 (Stack + Positioned)
                   return Stack(
                     children: [
                       const AskForScreen(),
@@ -213,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 15),
+          const SizedBox(height: 0),
           SectionTitle(title: "✨ 이런 모임은 어때요?", onMoreTap: () => _onTabTap(1)),
           const SizedBox(height: 8),
           SizedBox(
