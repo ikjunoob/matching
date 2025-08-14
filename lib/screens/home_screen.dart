@@ -17,7 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late int _selectedTabIndex;
-  final List tabs = ['추천', '모임', '구해요', '장소'];
+  final List<String> tabs = ['추천', '모임', '구해요', '장소'];
 
   @override
   void initState() {
@@ -36,9 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onTabTap(int index) {
-    setState(() {
-      _selectedTabIndex = index;
-    });
+    setState(() => _selectedTabIndex = index);
     widget.onTabChange?.call(index);
   }
 
@@ -63,7 +61,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(width: 4),
                 const Spacer(),
                 IconButton(
                   icon: Image.asset(
@@ -99,8 +96,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-
-      // body: Column(
       body: Column(
         children: [
           // ===== 상단 탭바 =====
@@ -108,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.white,
             child: Stack(
               children: [
-                // 회색 구분선: 항상 맨 아래 1px
+                // 1px 하단 구분선 (기준 라인)
                 const Positioned(
                   left: 0,
                   right: 0,
@@ -119,14 +114,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Color(0xFFE6E8EB),
                   ),
                 ),
-
-                // 탭들: 밑줄은 각 탭 컨테이너의 bottom border로 그려서
-                // 위 Divider와 '정확히 같은 y'에 겹치게 함
+                // 각 탭의 bottom border를 구분선과 같은 y에 "정확히" 겹치게 함
                 Padding(
-                  // 로고와 간격 벌어지는 문제 막으려고 top/bottom 여백 최소화
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                   child: SizedBox(
-                    height: 40, // 탭바 높이 (필요시 38~44로 조정 가능)
+                    height: 38, // 탭바 높이 (38~44 조절 가능)
                     child: Align(
                       alignment: Alignment.bottomLeft,
                       child: Row(
@@ -138,28 +130,36 @@ class _HomeScreenState extends State<HomeScreen> {
                             splashColor: Colors.transparent,
                             highlightColor: Colors.transparent,
                             child: Container(
-                              padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-                              // ✅ 선택 밑줄을 bottom border로: Divider와 완전 동일선상
+                              padding: const EdgeInsets.fromLTRB(
+                                12,
+                                10,
+                                12,
+                                0,
+                              ), // 하단 0 → 라인 겹침
                               decoration: BoxDecoration(
                                 border: Border(
                                   bottom: BorderSide(
                                     color: isSelected
                                         ? const Color(0xFFAED6F1)
                                         : Colors.transparent,
-                                    width: 1, // 구분선과 동일 두께
+                                    width: 1, // Divider와 동일 두께
                                   ),
                                 ),
                               ),
-                              child: Text(
-                                tabs[index],
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: isSelected
-                                      ? Colors.black
-                                      : Colors.grey,
+                              // 텍스트만 위로 올려서 시각적 여백 확보
+                              child: Transform.translate(
+                                offset: const Offset(0, -10),
+                                child: Text(
+                                  tabs[index],
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: isSelected
+                                        ? Colors.black
+                                        : Colors.grey,
+                                  ),
                                 ),
                               ),
                             ),
@@ -173,7 +173,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // 👈 리스트 아이템 끝이므로 콤마 필수!
           const SizedBox(height: 8),
 
           // ===== 탭별 컨텐츠 =====
@@ -232,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 0),
+          // ===== 모임 추천 =====
           SectionTitle(title: "✨ 이런 모임은 어때요?", onMoreTap: () => _onTabTap(1)),
           const SizedBox(height: 8),
           SizedBox(
@@ -247,7 +246,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: "함께 성장하는 독서 모임",
                   tags: "#독서 #자기계발",
                   heartCount: 120,
-                  onArrowTap: () => print("함께 성장하는 독서 모임: 상세 준비중"),
                 ),
                 _buildCard(
                   image:
@@ -255,7 +253,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: "주말엔 브런치",
                   tags: "#맛집 #취향공유",
                   heartCount: 88,
-                  onArrowTap: () => print("주말엔 브런치: 상세 준비중"),
                 ),
                 _buildCard(
                   image:
@@ -263,7 +260,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: "토요일엔 스터디/기타 긴 이름 예시",
                   tags: "#스터디 #개발 #네트워킹",
                   heartCount: 77,
-                  onArrowTap: () => print("토요일엔 스터디/기타 긴 이름 예시: 상세 준비중"),
                 ),
                 _buildCard(
                   image:
@@ -271,12 +267,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: "문화 탐방 모임",
                   tags: "#전시 #문화생활",
                   heartCount: 65,
-                  onArrowTap: () => print("문화 탐방 모임: 상세 준비중"),
                 ),
               ],
             ),
           ),
+
           const SizedBox(height: 32),
+
+          // ===== 장소 추천 (인원수 뱃지 제거) =====
           SectionTitle(title: "🎯 취향저격! 추천 장소", onMoreTap: () => _onTabTap(3)),
           const SizedBox(height: 8),
           SizedBox(
@@ -287,41 +285,44 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 _buildCard(
                   image:
-                      'https://images.unsplash.com/photo-1508264165352-258db2ebd59b?auto=format&fit=crop&w=8',
+                      'https://images.unsplash.com/photo-1508264165352-258db2ebd59b?auto=format&fit=crop&w=800',
                   title: "별 보러 가는 언덕",
                   tags: "#자연 #밤하늘",
                   heartCount: 95,
-                  onArrowTap: () => print("별 보러 가는 언덕: 상세 준비중"),
+                  showPeople: false, // 인원수 숨김
                 ),
                 _buildCard(
                   image:
-                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
+                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=800',
                   title: "조용한 카페",
                   tags: "#공부 #카페 #스터디",
                   heartCount: 76,
-                  onArrowTap: () => print("조용한 카페: 상세 준비중"),
+                  showPeople: false,
                 ),
                 _buildCard(
                   image:
-                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
-                  title: "조용한 카페",
-                  tags: "#공부 #카페 #스터디",
-                  heartCount: 76,
-                  onArrowTap: () => print("조용한 카페: 상세 준비중"),
+                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=800',
+                  title: "아늑한 북카페",
+                  tags: "#독서 #휴식",
+                  heartCount: 54,
+                  showPeople: false,
                 ),
                 _buildCard(
                   image:
-                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=80',
-                  title: "조용한 카페",
-                  tags: "#공부 #카페 #스터디",
-                  heartCount: 76,
-                  onArrowTap: () => print("조용한 카페: 상세 준비중"),
+                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=800',
+                  title: "캠퍼스 뒤 공원",
+                  tags: "#산책 #자연",
+                  heartCount: 61,
+                  showPeople: false,
                 ),
               ],
             ),
           ),
+
           const SizedBox(height: 32),
-          const SectionTitle(title: "🔥 지금 가장 핫한 유저"),
+
+          // ===== 핫한 유저 (더보기 버튼만 표시, 기능 없음) =====
+          SectionTitle(title: "🔥 지금 가장 핫한 유저", onMoreTap: () {}),
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.only(left: 26.0, right: 14.0),
@@ -357,12 +358,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // -------------------- 카드형 콘텐츠 위젯(모임/장소 등 가로 슬라이드) --------------------
+  // -------------------- 카드형 콘텐츠 위젯 --------------------
   Widget _buildCard({
     required String image,
     required String title,
     required String tags,
     required int heartCount,
+    bool showPeople = true, // 인원수 표시 여부
+    String peopleText = "5/10명", // 인원 텍스트
     VoidCallback? onArrowTap,
   }) {
     final tagList = tags.trim().split(RegExp(r'\s+'));
@@ -389,36 +392,38 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          // [상단] 인원/좋아요 아이콘과 숫자
+          // 상단 뱃지들
           Positioned(
             top: 10,
             left: 10,
             right: 10,
             child: Row(
               children: [
-                // 인원 표시
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
+                if (showPeople)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.group, size: 13, color: Colors.white),
+                        const SizedBox(width: 2),
+                        Text(
+                          peopleText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.45),
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Row(
-                    children: const [
-                      Icon(Icons.group, size: 13, color: Colors.white),
-                      SizedBox(width: 2),
-                      Text(
-                        "5/10명",
-                        style: TextStyle(color: Colors.white, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                // 좋아요(하트) 표시
+                if (showPeople) const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 7,
@@ -449,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          // [하단 좌측] 타이틀/태그
+          // 하단 좌측: 타이틀/태그
           Positioned(
             left: 10,
             bottom: 10,
@@ -457,7 +462,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 카드 타이틀
                 Text(
                   title,
                   style: const TextStyle(
@@ -470,7 +474,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 5),
-                // 카드 태그(#태그 형식)
                 tagList.length <= 2
                     ? Wrap(
                         spacing: 6,
@@ -531,7 +534,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          // [하단 우측] → 이동 화살표 버튼
+          // 하단 우측: 상세 화살표
           Positioned(
             bottom: 10,
             right: 10,
@@ -556,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // -------------------- [핫한 유저] 프로필 위젯(클릭시 상세 팝업) --------------------
+  // -------------------- [핫한 유저] 프로필 위젯 (클릭시 상세 팝업) --------------------
   Widget _buildUser(
     String imageUrl,
     String name,
@@ -567,11 +570,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 16),
       child: GestureDetector(
-        // 프로필 클릭 시 상세 팝업
         onTap: () {
           showGeneralDialog(
             context: context,
-            barrierColor: Colors.black.withOpacity(0.55), // 뒤 배경 반투명 검정
+            barrierColor: Colors.black.withOpacity(0.55),
             barrierDismissible: true,
             barrierLabel: '',
             transitionDuration: const Duration(milliseconds: 350),
@@ -633,7 +635,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// -------------------- 각 섹션별 타이틀 & "더보기" 버튼 위젯 --------------------
+// -------------------- 섹션 타이틀 & "더보기" --------------------
 class SectionTitle extends StatelessWidget {
   final String title;
   final VoidCallback? onMoreTap;

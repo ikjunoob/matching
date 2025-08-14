@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class PostPreviewScreen extends StatefulWidget {
   final Map<String, dynamic> post;
