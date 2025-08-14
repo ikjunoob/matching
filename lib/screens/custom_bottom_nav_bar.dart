@@ -81,6 +81,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     isActive: currentIndex == 0,
                     accentColor: accentColor,
                     onTap: () => onTap(0),
+                    size: 28, // 홈 아이콘 크게
                   ),
                   _NavBarIcon(
                     custom: Image.network(
@@ -92,6 +93,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     isActive: currentIndex == 1,
                     accentColor: accentColor,
                     onTap: () => onTap(1),
+                    // size는 custom 사용 시 무시됨
                   ),
                   const Expanded(child: SizedBox()),
                   _NavBarIcon(
@@ -99,12 +101,14 @@ class CustomBottomNavBar extends StatelessWidget {
                     isActive: currentIndex == 3,
                     accentColor: accentColor,
                     onTap: () => onTap(3),
+                    size: 28, // 캘린더 아이콘 크게
                   ),
                   _NavBarIcon(
                     icon: Icons.person_rounded,
                     isActive: currentIndex == 4,
                     accentColor: accentColor,
                     onTap: () => onTap(4),
+                    size: 28, // 내 정보 아이콘 크게
                   ),
                 ],
               ),
@@ -125,11 +129,9 @@ class _NavBarBgPainter extends CustomPainter {
       ..color = Colors.white
       ..style = PaintingStyle.fill;
 
-    // 위쪽 Border Paint (2px)
+    // 위쪽 Border Paint (1px, 연한 회색)
     final topBorderPaint = Paint()
-      ..color = Colors
-          .grey
-          .shade200 // 경계선 색상
+      ..color = Colors.grey.shade200
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
@@ -175,7 +177,7 @@ class _NavBarBgPainter extends CustomPainter {
     canvas.drawShadow(path, Colors.black.withOpacity(0.09), 8, false);
     canvas.drawPath(path, paint);
 
-    // ===== 위쪽 Border만 =====
+    // 위쪽 Border만
     final topBorderPath = Path();
     topBorderPath.moveTo(0, 20);
     topBorderPath.quadraticBezierTo(0, 0, 20, 0);
@@ -213,6 +215,7 @@ class _NavBarIcon extends StatelessWidget {
   final bool isActive;
   final Color accentColor;
   final VoidCallback onTap;
+  final double size; // 아이콘 크기
 
   const _NavBarIcon({
     this.icon,
@@ -220,6 +223,7 @@ class _NavBarIcon extends StatelessWidget {
     required this.isActive,
     required this.accentColor,
     required this.onTap,
+    this.size = 22, // 기본값(기존 크기)
   });
 
   @override
@@ -229,7 +233,9 @@ class _NavBarIcon extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        child: Center(child: custom ?? Icon(icon, size: 22, color: color)),
+        child: Center(
+          child: custom ?? Icon(icon, size: size, color: color),
+        ),
       ),
     );
   }

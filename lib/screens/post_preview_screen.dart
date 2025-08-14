@@ -22,7 +22,6 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     _viewCount = widget.post['views'] ?? 0;
   }
 
-  // 남은 기간 표시
   String _formatRemain(DateTime d) {
     final now = DateTime.now();
     if (!d.isAfter(now)) return "마감됨";
@@ -33,7 +32,6 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     return "마감까지 $h시간 $m분";
   }
 
-  // 이미지 위/아래 pill
   Widget _pill(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -52,7 +50,6 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     );
   }
 
-  // 템플릿 파싱: 4개 섹션에서 '-' 또는 '•'로 시작하는 항목 수집
   Map<String, List<String>> _parseTemplate(String content) {
     final keys = ["모집 대상", "활동 내용", "필요 역량", "추가 정보"];
     final map = {for (final k in keys) k: <String>[]};
@@ -60,8 +57,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     final lines = content.split('\n').map((e) => e.trimRight()).toList();
     String? current;
 
-    bool isHeader(String line) =>
-        keys.any((k) => line.startsWith(k)); // "모집 대상 (예: …)" 허용
+    bool isHeader(String line) => keys.any((k) => line.startsWith(k));
 
     for (final raw in lines) {
       final line = raw.trim();
@@ -86,7 +82,6 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     return must.every((k) => content.contains(k));
   }
 
-  // 플랫 섹션 UI: 아이콘 + 라벨 + 내용 + Divider (박스 없음)
   Widget _sectionFlat({
     required IconData icon,
     required String title,
@@ -120,7 +115,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
           style: const TextStyle(
             fontSize: 14.5,
             height: 1.5,
-            color: Color(0xFF6B7280), // 중간 회색
+            color: Color(0xFF6B7280),
           ),
         ),
         const SizedBox(height: 12),
@@ -146,6 +141,10 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
         ? _parseTemplate(content)
         : const <String, List<String>>{};
 
+    // 화면 너비 기반 고정 높이 (16:9 등 원하는 비율로)
+    final double w = MediaQuery.of(context).size.width - 32; // 좌우 padding 고려
+    final double h = w * 9 / 16; // 16:9. 필요하면 4/3 등으로 변경
+
     return Scaffold(
       appBar: AppBar(
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -168,49 +167,48 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // 이미지 + PILL
-          if (imageBytes != null)
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.memory(imageBytes, fit: BoxFit.cover),
-                ),
-                if (deadline != null)
-                  Positioned(
-                    left: 8,
-                    bottom: 8,
-                    child: _pill(_formatRemain(deadline)),
-                  ),
-                if (headcount.isNotEmpty)
-                  Positioned(
-                    right: 8,
-                    bottom: 8,
-                    child: _pill("$headcount명 모집"),
-                  ),
-              ],
-            )
-          else
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF2F4F7),
-                borderRadius: BorderRadius.circular(12),
+          // === 이미지: 가로 꽉 채우기 핵심 ===
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: double.infinity, // 가로 꽉
+              height: h, // 고정 높이(비율 유지용)
+              child: Stack(
+                fit: StackFit.expand, // 내부 위젯(이미지) 꽉 채우기
+                children: [
+                  if (imageBytes != null)
+                    Image.memory(
+                      imageBytes,
+                      fit: BoxFit.cover, // 비율 유지하며 잘라서 꽉 채움
+                      alignment: Alignment.center,
+                    )
+                  else
+                    Container(color: const Color(0xFFF2F4F7)),
+                  if (deadline != null)
+                    Positioned(
+                      left: 8,
+                      bottom: 8,
+                      child: _pill(_formatRemain(deadline)),
+                    ),
+                  if (headcount.isNotEmpty)
+                    Positioned(
+                      right: 8,
+                      bottom: 8,
+                      child: _pill("$headcount명 모집"),
+                    ),
+                ],
               ),
-              alignment: Alignment.center,
-              child: const Text("이미지 없음"),
             ),
+          ),
 
           const SizedBox(height: 16),
 
-          // 제목
           Text(
             title,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
 
-          // 태그 + 조회수 + 좋아요
           Row(
             children: [
               if (tags.isNotEmpty)
@@ -240,7 +238,6 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
 
           const SizedBox(height: 16),
 
-          // 본문
           if (!useTemplate)
             Text(
               content.isEmpty ? "내용이 없습니다." : content,
@@ -279,8 +276,6 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
             ),
         ],
       ),
-
-      // 하단 버튼
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),

@@ -7,6 +7,7 @@ import "package:file_picker/file_picker.dart";
 import "package:permission_handler/permission_handler.dart";
 import "package:intl/intl.dart";
 import 'post_preview_screen.dart';
+import 'question_builder_screen.dart';
 
 class PostScreen extends StatefulWidget {
   const PostScreen({super.key});
@@ -32,6 +33,8 @@ class _PostScreenState extends State<PostScreen> {
   Uint8List? _imageBytes;
 
   bool _templateInserted = false;
+  String? _contentBackup;
+
   static const String _templateText = """
 모집 대상 (예: 프론트엔드 개발자 1명)
 -
@@ -48,15 +51,7 @@ class _PostScreenState extends State<PostScreen> {
 """;
 
   Map<String, dynamic> _buildPostMap() {
-    final tags = _tagCtrl.text
-        .trim()
-        .split(" ")
-        .map((t) => t.trim())
-        .where((t) => t.isNotEmpty)
-        .map((t) => t.startsWith("#") ? t.substring(1) : t)
-        .where((t) => t.isNotEmpty)
-        .toList();
-
+    final tags = _parseTags(_tagCtrl.text);
     return {
       'image': _imageBytes,
       'title': _titleCtrl.text.trim(),
@@ -73,11 +68,43 @@ class _PostScreenState extends State<PostScreen> {
     };
   }
 
+  List<String> _parseTags(String raw) {
+    return raw
+        .trim()
+        .split(" ")
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .map((t) => t.startsWith("#") ? t.substring(1) : t)
+        .where((t) => t.isNotEmpty)
+        .toList();
+  }
+
+  String? _requiredValidator(String? v, String label) {
+    if (v == null || v.trim().isEmpty) return "$label은(는) 필수 입력란입니다.";
+    return null;
+  }
+
+  String? _tagsValidator(String? v) {
+    final tags = _parseTags(v ?? "");
+    if (tags.isEmpty) return "태그를 1개 이상 입력해 주세요.";
+    return null;
+  }
+
+  String? _headcountValidator(String? v) {
+    if (v == null || v.trim().isEmpty) return "모집 인원을 입력해 주세요.";
+    final n = int.tryParse(v.trim());
+    if (n == null) return "숫자만 입력해 주세요.";
+    if (n <= 0) return "모집 인원은 1명 이상이어야 합니다.";
+    if (n > 9999) return "값이 너무 큽니다.";
+    return null;
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) {
+      // 폼 전체 유효성 실패 시 스낵바 추가 안내
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("모든 항목을 입력해 주세요")));
+      ).showSnackBar(const SnackBar(content: Text("필수 항목을 확인해 주세요.")));
       return;
     }
     final post = _buildPostMap();
@@ -110,26 +137,19 @@ class _PostScreenState extends State<PostScreen> {
 
   void _toggleTemplate() {
     if (_templateInserted) {
-      final current = _contentCtrl.text;
-      final idx = current.lastIndexOf(_templateText);
-      if (idx != -1) {
-        final next = (current.replaceRange(
-          idx,
-          idx + _templateText.length,
-          "",
-        )).trimRight();
-        _contentCtrl
-          ..text = next
-          ..selection = TextSelection.collapsed(offset: next.length);
-      }
-    } else {
-      final old = _contentCtrl.text.trimRight();
-      final next = old.isEmpty ? _templateText : "$old\n$_templateText";
+      final restored = _contentBackup ?? "";
       _contentCtrl
-        ..text = next
-        ..selection = TextSelection.collapsed(offset: next.length);
+        ..text = restored
+        ..selection = TextSelection.collapsed(offset: restored.length);
+      _contentBackup = null;
+      setState(() => _templateInserted = false);
+    } else {
+      _contentBackup = _contentCtrl.text;
+      _contentCtrl
+        ..text = _templateText
+        ..selection = TextSelection.collapsed(offset: _templateText.length);
+      setState(() => _templateInserted = true);
     }
-    setState(() => _templateInserted = !_templateInserted);
   }
 
   Future<void> _pickImage() async {
@@ -241,7 +261,6 @@ class _PostScreenState extends State<PostScreen> {
     setState(() {});
   }
 
-  // 필드 공통 데코
   InputDecoration _whiteFieldDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
@@ -252,11 +271,20 @@ class _PostScreenState extends State<PostScreen> {
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
       enabledBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Color(0xFFE6E8EB)),
+        borderSide: BorderSide(color: Color.fromARGB(255, 109, 109, 109)),
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
       focusedBorder: const OutlineInputBorder(
         borderSide: BorderSide(color: Color(0xFF5BA7FF)),
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
+      errorBorder: const OutlineInputBorder(
+        // 에러 시 빨간 테두리
+        borderSide: BorderSide(color: Colors.red),
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
+      focusedErrorBorder: const OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.red),
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -273,7 +301,6 @@ class _PostScreenState extends State<PostScreen> {
     );
   }
 
-  // 한글 라인메트릭 고정용 텍스트 빌더
   Text _dropdownText(String s) => Text(
     s,
     strutStyle: const StrutStyle(
@@ -334,11 +361,12 @@ class _PostScreenState extends State<PostScreen> {
           ),
         ],
       ),
-      backgroundColor: const Color(0xFFF6F7F9),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         child: Form(
           key: _formKey,
+          autovalidateMode: AutovalidateMode.disabled,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -400,7 +428,6 @@ class _PostScreenState extends State<PostScreen> {
               _sectionLabel("카테고리"),
               const SizedBox(height: 6),
 
-              // 드롭다운(한글 잘림 방지: strutStyle + selectedItemBuilder)
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
                 isExpanded: true,
@@ -414,7 +441,6 @@ class _PostScreenState extends State<PostScreen> {
                   Icons.keyboard_arrow_down_rounded,
                   color: Colors.black54,
                 ),
-                // 닫힌 상태의 기본 텍스트 스타일
                 style: const TextStyle(
                   fontSize: 15,
                   height: 1.35,
@@ -422,7 +448,6 @@ class _PostScreenState extends State<PostScreen> {
                   color: Colors.black87,
                 ),
                 decoration: _whiteFieldDecoration(),
-                // 닫힌 상태에서도 동일 라인메트릭 강제
                 selectedItemBuilder: (context) => _categories
                     .map(
                       (e) => Align(
@@ -441,6 +466,8 @@ class _PostScreenState extends State<PostScreen> {
                     .toList(),
                 onChanged: (v) =>
                     setState(() => _selectedCategory = v ?? _selectedCategory),
+                validator: (v) =>
+                    v == null || v.isEmpty ? "카테고리를 선택해 주세요." : null,
               ),
 
               const SizedBox(height: 12),
@@ -449,6 +476,7 @@ class _PostScreenState extends State<PostScreen> {
               TextFormField(
                 controller: _titleCtrl,
                 decoration: _whiteFieldDecoration(hint: "게시물 제목을 입력하세요"),
+                validator: (v) => _requiredValidator(v, "제목"),
               ),
 
               const SizedBox(height: 12),
@@ -477,9 +505,9 @@ class _PostScreenState extends State<PostScreen> {
                         ),
                         minimumSize: Size.zero,
                       ),
-                      child: Text(
-                        _templateInserted ? "질문 템플릿 취소" : "질문 템플릿 추가",
-                        style: const TextStyle(
+                      child: const Text(
+                        "질문 템플릿 추가",
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: Colors.black,
@@ -492,10 +520,13 @@ class _PostScreenState extends State<PostScreen> {
               const SizedBox(height: 6),
               TextFormField(
                 controller: _contentCtrl,
-                maxLines: 8,
-                decoration: _whiteFieldDecoration(
-                  hint: "상세 내용을 작성해주세요",
-                ).copyWith(fillColor: Colors.white),
+                maxLines: 7,
+                decoration: _whiteFieldDecoration(hint: "상세 내용을 작성해주세요")
+                    .copyWith(
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.fromLTRB(14, 20, 14, 4),
+                    ),
+                validator: (v) => _requiredValidator(v, "내용"),
               ),
 
               const SizedBox(height: 12),
@@ -506,6 +537,7 @@ class _PostScreenState extends State<PostScreen> {
                 focusNode: _tagFocus,
                 onChanged: _onTagChanged,
                 decoration: _whiteFieldDecoration(hint: "#태그 입력"),
+                validator: _tagsValidator,
               ),
 
               const SizedBox(height: 12),
@@ -521,6 +553,7 @@ class _PostScreenState extends State<PostScreen> {
                           controller: _headcountCtrl,
                           keyboardType: TextInputType.number,
                           decoration: _whiteFieldDecoration(hint: "예: 5"),
+                          validator: _headcountValidator,
                         ),
                       ],
                     ),
@@ -552,6 +585,9 @@ class _PostScreenState extends State<PostScreen> {
                                   onPressed: _pickDate,
                                 ),
                               ),
+                          // _deadline 여부로 검증
+                          validator: (_) =>
+                              _deadline == null ? "마감일을 선택해 주세요." : null,
                         ),
                       ],
                     ),
@@ -563,7 +599,22 @@ class _PostScreenState extends State<PostScreen> {
               SizedBox(
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: _submit,
+                  onPressed: () async {
+                    // 먼저 현재 화면 유효성 검사
+                    if (!_formKey.currentState!.validate()) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("필수 항목을 확인해 주세요.")),
+                      );
+                      return;
+                    }
+                    final questions = await Navigator.push<List<String>>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const QuestionBuilderScreen(),
+                      ),
+                    );
+                    // if (questions != null) { ... 이어서 사용 }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5BA7FF),
                     shape: RoundedRectangleBorder(
@@ -571,7 +622,7 @@ class _PostScreenState extends State<PostScreen> {
                     ),
                   ),
                   child: const Text(
-                    "등록하기",
+                    "다음",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
