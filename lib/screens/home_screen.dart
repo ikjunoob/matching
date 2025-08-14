@@ -19,25 +19,64 @@ class _HomeScreenState extends State<HomeScreen> {
   late int _selectedTabIndex;
   final List<String> tabs = ['추천', '모임', '구해요', '장소'];
 
+  // GlobalKey 리스트와 인디케이터의 위치/너비를 저장할 변수 추가
+  late List<GlobalKey> _tabKeys;
+  double _indicatorX = 0.0;
+  double _indicatorWidth = 0.0;
+
   @override
   void initState() {
     super.initState();
     _selectedTabIndex = widget.tabIndex;
+
+    // 각 탭에 대한 GlobalKey 생성
+    _tabKeys = List.generate(tabs.length, (_) => GlobalKey());
+
+    // UI가 모두 그려진 직후에 초기 인디케이터 위치를 계산
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateIndicatorPosition(_selectedTabIndex);
+    });
   }
 
   @override
   void didUpdateWidget(covariant HomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.tabIndex != oldWidget.tabIndex) {
-      setState(() {
-        _selectedTabIndex = widget.tabIndex;
+      // 현재 빌드가 끝난 후 다음 프레임에서 _onTabTap을 호출하도록 예약
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _onTabTap(widget.tabIndex);
       });
     }
   }
 
+  // 탭을 눌렀을 때 인디케이터 위치를 업데이트하는 로직
   void _onTabTap(int index) {
-    setState(() => _selectedTabIndex = index);
+    setState(() {
+      _selectedTabIndex = index;
+    });
+    _updateIndicatorPosition(index);
     widget.onTabChange?.call(index);
+  }
+
+  // 선택된 탭의 실제 위치와 너비를 계산하는 함수
+  void _updateIndicatorPosition(int index) {
+    final key = _tabKeys[index];
+    final RenderBox? renderBox =
+        key.currentContext?.findRenderObject() as RenderBox?;
+
+    if (renderBox != null) {
+      final size = renderBox.size;
+      // 부모인 Row로부터의 상대적인 위치를 계산
+      final position = renderBox.localToGlobal(
+        Offset.zero,
+        ancestor: context.findRenderObject(),
+      );
+
+      setState(() {
+        _indicatorX = position.dx; // 탭의 상대적 X 위치
+        _indicatorWidth = size.width; // 탭의 실제 너비
+      });
+    }
   }
 
   @override
@@ -98,12 +137,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          // ===== 상단 탭바 =====
+          // ===== 상단 탭바 (GlobalKey 및 애니메이션 로직 최종 적용) =====
           Container(
             color: Colors.white,
+            height: 42,
             child: Stack(
               children: [
-                // 1px 하단 구분선 (기준 라인)
+                // 하단 구분선
                 const Positioned(
                   left: 0,
                   right: 0,
@@ -114,60 +154,50 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Color(0xFFE6E8EB),
                   ),
                 ),
-                // 각 탭의 bottom border를 구분선과 같은 y에 "정확히" 겹치게 함
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                  child: SizedBox(
-                    height: 38, // 탭바 높이 (38~44 조절 가능)
-                    child: Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: List.generate(tabs.length, (index) {
-                          final isSelected = _selectedTabIndex == index;
-                          return InkWell(
-                            onTap: () => _onTabTap(index),
-                            splashColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            child: Container(
-                              padding: const EdgeInsets.fromLTRB(
-                                12,
-                                10,
-                                12,
-                                0,
-                              ), // 하단 0 → 라인 겹침
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: isSelected
-                                        ? const Color(0xFFAED6F1)
-                                        : Colors.transparent,
-                                    width: 1, // Divider와 동일 두께
-                                  ),
-                                ),
-                              ),
-                              // 텍스트만 위로 올려서 시각적 여백 확보
-                              child: Transform.translate(
-                                offset: const Offset(0, -10),
-                                child: Text(
-                                  tabs[index],
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                    color: isSelected
-                                        ? Colors.black
-                                        : Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
+                // 애니메이션 인디케이터
+                AnimatedPositioned(
+                  // left: (전체 너비 - 줄어든 너비)의 절반만큼 더해서 중앙 정렬
+                  left: _indicatorX + (_indicatorWidth * 0.15),
+                  // width: 측정된 너비의 70%만 사용 (이 값을 조절해 길이 변경)
+                  width: _indicatorWidth * 0.7,
+                  bottom: 0,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOut,
+                  child: Container(
+                    height: 2.5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFAED6F1),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
+                ),
+                // 탭 버튼들
+                Row(
+                  children: List.generate(tabs.length, (index) {
+                    final isSelected = _selectedTabIndex == index;
+                    return InkWell(
+                      key: _tabKeys[index], // 각 탭에 고유 Key 할당
+                      onTap: () => _onTabTap(index),
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        child: Text(
+                          tabs[index],
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isSelected ? Colors.black : Colors.grey,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
                 ),
               ],
             ),
@@ -379,7 +409,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Stack(
         children: [
-          // 카드 이미지 위에 그라데이션 오버레이
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -392,7 +421,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          // 상단 뱃지들
           Positioned(
             top: 10,
             left: 10,
@@ -454,7 +482,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          // 하단 좌측: 타이틀/태그
           Positioned(
             left: 10,
             bottom: 10,
@@ -534,7 +561,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          // 하단 우측: 상세 화살표
           Positioned(
             bottom: 10,
             right: 10,
@@ -600,25 +626,39 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         child: Column(
           children: [
-            ClipOval(
-              child: Image.network(
-                imageUrl,
-                width: 70,
-                height: 70,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    spreadRadius: 1,
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.network(
+                  imageUrl,
                   width: 70,
                   height: 70,
-                  color: Colors.grey[300],
-                  child: const Icon(
-                    Icons.person,
-                    size: 32,
-                    color: Colors.white70,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 70,
+                    height: 70,
+                    color: Colors.grey[300],
+                    child: const Icon(
+                      Icons.person,
+                      size: 32,
+                      color: Colors.white70,
+                    ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 10),
             Text(name, style: const TextStyle(fontSize: 14)),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -704,7 +744,6 @@ class UserDetailPopup extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: Stack(
             children: [
-              // 배경 이미지
               Positioned.fill(
                 child: Image.network(
                   imageUrl,
@@ -713,7 +752,6 @@ class UserDetailPopup extends StatelessWidget {
                       Container(color: Colors.grey[800]),
                 ),
               ),
-              // 블러 + 그라데이션 오버레이
               Positioned.fill(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
@@ -731,7 +769,6 @@ class UserDetailPopup extends StatelessWidget {
                   ),
                 ),
               ),
-              // 콘텐츠
               Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
@@ -820,7 +857,6 @@ class UserDetailPopup extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // 자기소개
                     Container(
                       margin: const EdgeInsets.only(top: 26, bottom: 8),
                       padding: const EdgeInsets.symmetric(
@@ -849,7 +885,6 @@ class UserDetailPopup extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    // 하단 CTA
                     Column(
                       children: [
                         Container(
