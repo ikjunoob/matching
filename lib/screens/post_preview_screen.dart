@@ -94,14 +94,48 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     return must.every((k) => content.contains(k));
   }
 
+  /// 아이콘(Fa) 또는 커스텀 이미지(PNG)를 표시할 수 있는 섹션
   Widget _sectionRow({
-    required IconData iconRegular,
+    IconData? iconRegular,
+    String? customIcon,
+    double customIconSize = 22,
+    double faIconSize = 18,
     required String title,
     required List<String> items,
   }) {
     if (items.isEmpty) return const SizedBox.shrink();
-    const double iconSlot = 22;
+
+    final double iconSlot = customIcon != null
+        ? (customIconSize + 6)
+        : (faIconSize + 6);
     final text = items.join('\n');
+
+    Widget _leadingIcon() {
+      if (customIcon != null) {
+        return Transform.translate(
+          offset: const Offset(-2, 0), // 👈 왼쪽으로 3px 이동
+          child: Image.asset(
+            customIcon!,
+            width: customIconSize,
+            height: customIconSize,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+            errorBuilder: (context, error, stack) {
+              debugPrint("❌ Image load failed: $customIcon → $error");
+              return FaIcon(
+                FontAwesomeIcons.infoCircle,
+                size: faIconSize,
+                color: kTextPrimary,
+              );
+            },
+          ),
+        );
+      }
+      if (iconRegular == null) {
+        return SizedBox(width: faIconSize, height: faIconSize);
+      }
+      return FaIcon(iconRegular, size: faIconSize, color: kTextPrimary);
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -111,13 +145,17 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
           SizedBox(
             width: iconSlot,
             child: Padding(
-              padding: const EdgeInsets.only(top: 4.0),
+              padding: EdgeInsets.only(top: customIcon != null ? 2.0 : 4.0),
               child: Align(
                 alignment: Alignment.topLeft,
-                child: FaIcon(iconRegular, size: 18, color: kTextPrimary),
+                child: Transform.translate(
+                  offset: const Offset(0, 0), // ← 왼쪽으로 3px 이동
+                  child: _leadingIcon(),
+                ),
               ),
             ),
           ),
+
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -317,7 +355,8 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                     items: parsed["필요 역량"] ?? const [],
                   ),
                   _sectionRow(
-                    iconRegular: FontAwesomeIcons.circleInfo,
+                    customIcon: "assets/icons/free-icon-info.png",
+                    customIconSize: 20, // ✅ 아이콘 크기 키운 부분
                     title: "추가 정보",
                     items: parsed["추가 정보"] ?? const [],
                   ),

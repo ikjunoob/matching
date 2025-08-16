@@ -3,6 +3,7 @@ import "dart:io";
 import "dart:typed_data";
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:image_picker/image_picker.dart";
 import "package:file_picker/file_picker.dart";
 import "package:permission_handler/permission_handler.dart";
@@ -27,6 +28,31 @@ const kFieldVPad = 12.0; // 입력창 안쪽 세로 여백
 const kFieldFont = 16.0; // 입력 글자 크기
 const kLabelFont = 14.0; // 라벨 글자 크기
 
+/// ===== 템플릿 삭제 방지 포매터 =====
+class TemplateGuardFormatter extends TextInputFormatter {
+  final String template;
+  const TemplateGuardFormatter(this.template);
+
+  bool _containsTemplateAsSubsequence(String text, String pattern) {
+    int i = 0;
+    for (int j = 0; j < text.length && i < pattern.length; j++) {
+      if (text.codeUnitAt(j) == pattern.codeUnitAt(i)) i++;
+    }
+    return i == pattern.length;
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (_containsTemplateAsSubsequence(newValue.text, template)) {
+      return newValue;
+    }
+    return oldValue;
+  }
+}
+
 class PostScreen extends StatefulWidget {
   const PostScreen({super.key});
 
@@ -45,6 +71,10 @@ class _PostScreenState extends State<PostScreen> {
   final _tagCtrl = TextEditingController();
   final _headcountCtrl = TextEditingController();
   final _tagFocus = FocusNode();
+
+  // 에러 텍스트를 읽기 위한 키 (레이아웃 고정 표시용)
+  final _headcountFieldKey = GlobalKey<FormFieldState<String>>();
+  final _deadlineFieldKey = GlobalKey<FormFieldState<String>>();
 
   DateTime? _deadline;
   File? _imageFile;
@@ -293,7 +323,6 @@ class _PostScreenState extends State<PostScreen> {
       ),
       filled: true,
       fillColor: kCardBg,
-      // 기본/비활성
       border: const OutlineInputBorder(
         borderSide: BorderSide(color: kBorder, width: 1),
         borderRadius: BorderRadius.all(Radius.circular(kFieldRadius)),
@@ -302,12 +331,10 @@ class _PostScreenState extends State<PostScreen> {
         borderSide: BorderSide(color: kBorder, width: 1),
         borderRadius: BorderRadius.all(Radius.circular(kFieldRadius)),
       ),
-      // 포커스(요청 색상)
       focusedBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: kAccent, width: 2), // Color(0xFF5BA7FF)
+        borderSide: BorderSide(color: kAccent, width: 2),
         borderRadius: BorderRadius.all(Radius.circular(kFieldRadius)),
       ),
-      // 에러
       errorBorder: const OutlineInputBorder(
         borderSide: BorderSide(color: Colors.red, width: 1),
         borderRadius: BorderRadius.all(Radius.circular(kFieldRadius)),
@@ -319,6 +346,25 @@ class _PostScreenState extends State<PostScreen> {
       contentPadding: const EdgeInsets.symmetric(
         horizontal: kFieldHPad,
         vertical: kFieldVPad,
+      ),
+    );
+  }
+
+  // 고정 위치 에러 표시(레이아웃 흔들림 방지)
+  Widget _inlineError(GlobalKey<FormFieldState<String>> key) {
+    final error = key.currentState?.errorText;
+    return SizedBox(
+      height: 18, // 고정 높이(두 필드 모두 동일하게 확보)
+      child: AnimatedOpacity(
+        opacity: error == null ? 0 : 1,
+        duration: const Duration(milliseconds: 150),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            error ?? "",
+            style: const TextStyle(color: Colors.red, fontSize: 12),
+          ),
+        ),
       ),
     );
   }
@@ -402,7 +448,7 @@ class _PostScreenState extends State<PostScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 대표 이미지 박스: 가로 100%, 세로 192px, 둥글기 8px
+              // 대표 이미지
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
@@ -542,9 +588,9 @@ class _PostScreenState extends State<PostScreen> {
                         minimumSize: Size.zero,
                         foregroundColor: kTextPrimary,
                       ),
-                      child: const Text(
-                        "질문 템플릿 추가",
-                        style: TextStyle(
+                      child: Text(
+                        _templateInserted ? "질문 템플릿 취소" : "질문 템플릿 추가",
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
@@ -572,6 +618,9 @@ class _PostScreenState extends State<PostScreen> {
                         8,
                       ),
                     ),
+                inputFormatters: _templateInserted
+                    ? [TemplateGuardFormatter(_templateText)]
+                    : const [],
                 validator: (v) => _requiredValidator(v, "내용"),
               ),
 
@@ -593,6 +642,7 @@ class _PostScreenState extends State<PostScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
+                  // ===== 모집 인원 =====
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -606,13 +656,29 @@ class _PostScreenState extends State<PostScreen> {
                             fontSize: kFieldFont,
                             color: kTextPrimary,
                           ),
-                          decoration: _whiteFieldDecoration(hint: "예: 5"),
-                          validator: _headcountValidator,
+                          decoration: _whiteFieldDecoration(hint: "예: 5")
+                              .copyWith(
+                                // 레이아웃 흔들림 방지용 빈 helper (항상 자리만 차지)
+                                helperText: " ",
+                                helperStyle: const TextStyle(fontSize: 12),
+                                // 기본 에러 스타일은 그대로 사용(빨간 글씨)
+                              ),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty)
+                              return "모집 인원은 필수 입력란입니다.";
+                            final n = int.tryParse(v.trim());
+                            if (n == null) return "숫자만 입력해 주세요.";
+                            if (n <= 0) return "모집 인원은 1명 이상이어야 합니다.";
+                            if (n > 9999) return "값이 너무 큽니다.";
+                            return null;
+                          },
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 12),
+
+                  // ===== 마감일 =====
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -643,9 +709,12 @@ class _PostScreenState extends State<PostScreen> {
                                   ),
                                   onPressed: _pickDate,
                                 ),
+                                // 레이아웃 흔들림 방지용 빈 helper (항상 자리만 차지)
+                                helperText: " ",
+                                helperStyle: const TextStyle(fontSize: 12),
                               ),
                           validator: (_) =>
-                              _deadline == null ? "마감일을 선택해 주세요." : null,
+                              _deadline == null ? "마감일은 필수 입력란입니다." : null,
                         ),
                       ],
                     ),
@@ -654,7 +723,6 @@ class _PostScreenState extends State<PostScreen> {
               ),
 
               const SizedBox(height: 20),
-              // 등록 버튼: 둥글기 8px, 그림자 0 5px 20px rgba(59,138,246,0.4)
               SizedBox(
                 height: 54,
                 child: ElevatedButton(

@@ -6,60 +6,69 @@ import 'profile_screen.dart'; // 프로필(마이페이지) 화면
 import 'custom_bottom_nav_bar.dart'; // 커스텀 하단 네비게이션바
 import 'matching_screen.dart';
 
-// -------------------- MainScreen: 앱 전체의 메인/탭/네비게이션 컨테이너 --------------------
+/// -------------------- MainScreen: 앱 전체의 메인/탭/네비게이션 컨테이너 --------------------
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  /// initialNavIndex: 하단 네비게이션 초기 인덱스 (0:홈, 1:모임, 2:매칭, 3:캘린더, 4:프로필)
+  /// initialHomeTabIndex: 홈 상단 탭 초기 인덱스 (0:추천, 1:모임, 2:구해요, 3:장소)
+  const MainScreen({
+    super.key,
+    this.initialNavIndex = 0,
+    this.initialHomeTabIndex = 0,
+  });
+
+  final int initialNavIndex;
+  final int initialHomeTabIndex;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
-// -------------------- MainScreen의 State (하단 탭, 상단 홈탭 상태/화면전환) --------------------
+/// -------------------- MainScreen의 State (하단 탭, 상단 홈탭 상태/화면전환) --------------------
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex =
-      0; // 하단 네비게이션바에서 현재 선택된 아이콘의 인덱스 (0:홈, 1:모임, 2:글쓰기, 3:캘린더, 4:프로필, -1:홈 비활성화)
-  int _homeTabIndex = 0; // 홈(추천)화면의 상단 탭 인덱스 (0:추천, 1:모임, 2:구해요, 3:장소)
+  late int _selectedIndex; // 현재 하단 네비 인덱스
+  late int _homeTabIndex; // 홈 상단 탭 인덱스
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialNavIndex;
+    _homeTabIndex = widget.initialHomeTabIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true, // 하단 네비게이션바와 Body가 겹치는 효과(그림자, 둥근 효과 등)
-      // -------------------- 중앙 컨텐츠: 현재 탭에 맞는 페이지 반환 --------------------
+      extendBody: true, // 하단 네비와 컨텐츠 겹침 효과
       body: _getPage(_selectedIndex, _homeTabIndex),
-      // -------------------- 하단 네비게이션 바 --------------------
       bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _selectedIndex, // 현재 선택된 인덱스 전달 (홈,모임,글쓰기,캘린더,프로필)
+        currentIndex: _selectedIndex,
         onTap: (i) {
-          // [하단 네비게이션바 클릭시 실행]
           if (i == 0) {
-            // 홈(추천) 아이콘 클릭시 → 홈+추천탭으로 이동
+            // 홈(추천) 아이콘 클릭시 → 홈 + 추천탭으로 이동
             setState(() {
               _selectedIndex = 0;
-              _homeTabIndex = 0; // 홈화면의 상단 탭도 '추천'으로 변경
+              _homeTabIndex = 0;
             });
           } else {
-            // 그 외(모임, 글쓰기, 캘린더, 프로필) 클릭시 해당 탭으로 이동
+            // 그 외(모임, 매칭, 캘린더, 프로필)
             setState(() {
               _selectedIndex = i;
             });
           }
         },
-        // [중앙 글쓰기 버튼(+) 클릭시 실행]
         onCenterTap: () {
-          setState(() => _selectedIndex = 2); // 글쓰기(2)로 이동
+          setState(() => _selectedIndex = 2); // 중앙 매칭 버튼
         },
       ),
     );
   }
 
-  // -------------------- 실제로 각 네비게이션/탭별 보여줄 화면을 반환 --------------------
+  /// -------------------- 각 네비/탭별 화면 반환 --------------------
   Widget _getPage(int navIndex, int homeTabIndex) {
+    // 홈(추천) 또는 홈 내 다른 탭
     if (navIndex == 0 || navIndex == -1) {
-      // [홈(추천)] 또는 홈 내의 다른 탭을 선택했을 때
-      // tabIndex: 상단 탭(추천/모임/구해요/장소) 지정
       return HomeScreen(
         tabIndex: homeTabIndex,
-        // [상단 탭 변경시 콜백] → 상단탭 클릭 시 하단바 상태까지 맞춰서 관리
         onTabChange: (int idx) {
           setState(() {
             _homeTabIndex = idx;
@@ -69,18 +78,19 @@ class _MainScreenState extends State<MainScreen> {
         },
       );
     }
-    // [홈이 아닐 때] 각 네비게이션 인덱스별 다른 화면 반환
+
+    // 홈이 아닐 때
     switch (navIndex) {
       case 1:
-        return const GroupScreen(); // 모임 화면
+        return const GroupScreen(); // 모임
       case 2:
-        return const MatchingScreen(); // 글쓰기 화면
+        return const MatchingScreen(); // 매칭
       case 3:
-        return const CalendarScreen(); // 캘린더 화면
+        return const CalendarScreen(); // 캘린더
       case 4:
-        return const ProfileScreen(); // 프로필(마이페이지) 화면
+        return const ProfileScreen(); // 프로필
       default:
-        return const HomeScreen(); // 예외: 기본 홈화면
+        return const HomeScreen(); // 예외: 기본 홈
     }
   }
 }

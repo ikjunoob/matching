@@ -1,4 +1,7 @@
-import "package:flutter/material.dart";
+import 'package:flutter/material.dart';
+// 경로는 프로젝트 구조에 맞게 조정하세요.
+// 예: lib/screens/ 밑에 있다면: import '../main_screen.dart';
+import 'main_screen.dart';
 
 class QuestionBuilderScreen extends StatefulWidget {
   const QuestionBuilderScreen({super.key});
@@ -59,31 +62,26 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
   bool get _canAdd => _controllers.length < _maxCount;
   bool get _canRemove => _controllers.length > _minCount;
 
-  // 공통 인풋 데코 (텍스트 작게, placeholder 회색)
   InputDecoration _whiteFieldDecoration({String? hint}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(
-        color: Colors.black45,
-        fontSize: 14,
-        height: 1.35,
-      ),
+    return const InputDecoration(
+      hintText: "",
+      hintStyle: TextStyle(color: Colors.black45, fontSize: 14, height: 1.35),
       filled: true,
       fillColor: Colors.white,
-      border: const OutlineInputBorder(
+      border: OutlineInputBorder(
         borderSide: BorderSide(color: Color(0xFFE6E8EB)),
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      enabledBorder: const OutlineInputBorder(
+      enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(color: Color(0xFFE6E8EB)),
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      focusedBorder: const OutlineInputBorder(
+      focusedBorder: OutlineInputBorder(
         borderSide: BorderSide(color: Color(0xFF5BA7FF)),
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-    );
+      contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    ).copyWith(hintText: hint);
   }
 
   Widget _sectionLabel(String text) {
@@ -94,7 +92,7 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
         style: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: Colors.black, // 질문 N 라벨 검정
+          color: Colors.black,
         ),
       ),
     );
@@ -125,16 +123,32 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
     );
   }
 
+  /// 등록하기 → 유효성 확인 후 "구해요" 탭으로 바로 이동
   void _submit() {
     final filled = _controllers.map((c) => c.text.trim()).toList();
     final first3Filled = filled.take(_minCount).every((t) => t.isNotEmpty);
+
     if (!first3Filled) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("최소 3개의 질문을 입력해 주세요.")));
       return;
     }
-    Navigator.pop(context, filled);
+
+    // ✅ 스택 제거 후 MainScreen으로 진입하면서 홈의 "구해요" 탭(인덱스 2)을 초기 선택
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const MainScreen(
+          initialNavIndex: 0, // 홈으로
+          initialHomeTabIndex: 2, // 홈 상단 탭: "구해요"
+        ),
+      ),
+      (route) => false,
+    );
+
+    // 만약 filled 데이터를 이전 화면에 전달해야 한다면,
+    // 상태관리(Riverpod/Bloc)에 저장하거나, 서버/Firebase에 업로드하는 흐름으로 처리하세요.
   }
 
   @override
@@ -191,7 +205,6 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
                         TextFormField(
                           controller: _controllers[index],
                           style: const TextStyle(
-                            // 입력 텍스트
                             fontSize: 14,
                             height: 1.35,
                             color: Colors.black87,
@@ -244,8 +257,6 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
           ),
         ),
       ),
-
-      // 하단 버튼 - 화면 너비 꽉 채우기
       bottomSheet: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16 + 8),
         decoration: const BoxDecoration(
@@ -260,7 +271,7 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
           ],
         ),
         child: SizedBox(
-          width: double.infinity, // ★ 추가: 가로 꽉 채우기
+          width: double.infinity,
           height: 54,
           child: ElevatedButton(
             onPressed: _submit,
