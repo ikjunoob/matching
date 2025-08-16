@@ -16,10 +16,10 @@ class CustomBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final accentColor = const Color(0xFFAED6F1);
     const navBarHeight = 52.0;
-    const floatingSize = 60.0;
+    const floatingSize = 64.0;
 
     // 중앙 버튼을 더 위로 올림 (양수방향)
-    final double floatingBottom = navBarHeight / 2 - 4; // (여기서 숫자 크게 할수록 위로!)
+    final double floatingBottom = navBarHeight / 2 - 4; // (숫자 ↑ 클수록 위로)
 
     return SizedBox(
       height: navBarHeight + 24, // 충분한 여유
@@ -37,7 +37,7 @@ class CustomBottomNavBar extends StatelessWidget {
               painter: _NavBarBgPainter(),
             ),
           ),
-          // 중앙 플로팅 버튼 (더 위로)
+          // 중앙 플로팅 버튼
           Positioned(
             bottom: floatingBottom,
             left: 0,
@@ -79,36 +79,33 @@ class CustomBottomNavBar extends StatelessWidget {
                   _NavBarIcon(
                     icon: Icons.home_rounded,
                     isActive: currentIndex == 0,
-                    accentColor: accentColor,
                     onTap: () => onTap(0),
-                    size: 28, // 홈 아이콘 크게
+                    size: 28,
                   ),
                   _NavBarIcon(
                     custom: Image.network(
                       "https://cdn-icons-png.flaticon.com/512/1436/1436701.png",
                       width: 25,
                       height: 25,
-                      color: currentIndex == 1 ? accentColor : Colors.grey[400],
+                      color: currentIndex == 1
+                          ? Colors.black
+                          : Colors.grey[400],
                     ),
                     isActive: currentIndex == 1,
-                    accentColor: accentColor,
                     onTap: () => onTap(1),
-                    // size는 custom 사용 시 무시됨
                   ),
                   const Expanded(child: SizedBox()),
                   _NavBarIcon(
                     icon: Icons.calendar_today_outlined,
                     isActive: currentIndex == 3,
-                    accentColor: accentColor,
                     onTap: () => onTap(3),
-                    size: 28, // 캘린더 아이콘 크게
+                    size: 25,
                   ),
                   _NavBarIcon(
                     icon: Icons.person_rounded,
                     isActive: currentIndex == 4,
-                    accentColor: accentColor,
                     onTap: () => onTap(4),
-                    size: 28, // 내 정보 아이콘 크게
+                    size: 28,
                   ),
                 ],
               ),
@@ -120,7 +117,7 @@ class CustomBottomNavBar extends StatelessWidget {
   }
 }
 
-// 움푹 파인 곡선: 더 좁고 부드럽게!
+// 곡선 배경 Painter
 class _NavBarBgPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -129,7 +126,7 @@ class _NavBarBgPainter extends CustomPainter {
       ..color = Colors.white
       ..style = PaintingStyle.fill;
 
-    // 위쪽 Border Paint (1px, 연한 회색)
+    // 위쪽 Border Paint (1px 연한 회색)
     final topBorderPaint = Paint()
       ..color = Colors.grey.shade200
       ..strokeWidth = 1
@@ -141,7 +138,7 @@ class _NavBarBgPainter extends CustomPainter {
     path.moveTo(0, 20);
     path.quadraticBezierTo(0, 0, 20, 0);
 
-    // 파인 부분 시작/끝
+    // 움푹 파인 부분
     final double curveWidth = 0.20;
     final double dipStart = size.width * (0.504 - curveWidth / 2);
     final double dipEnd = size.width * (0.5 + curveWidth / 2);
@@ -177,7 +174,7 @@ class _NavBarBgPainter extends CustomPainter {
     canvas.drawShadow(path, Colors.black.withOpacity(0.09), 8, false);
     canvas.drawPath(path, paint);
 
-    // 위쪽 Border만
+    // 위쪽 Border 라인만
     final topBorderPath = Path();
     topBorderPath.moveTo(0, 20);
     topBorderPath.quadraticBezierTo(0, 0, 20, 0);
@@ -213,22 +210,21 @@ class _NavBarIcon extends StatelessWidget {
   final IconData? icon;
   final Widget? custom;
   final bool isActive;
-  final Color accentColor;
   final VoidCallback onTap;
-  final double size; // 아이콘 크기
+  final double size;
 
   const _NavBarIcon({
     this.icon,
     this.custom,
     required this.isActive,
-    required this.accentColor,
     required this.onTap,
-    this.size = 22, // 기본값(기존 크기)
+    this.size = 22,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? accentColor : Colors.grey[400];
+    // 눌렸을 때 검은색, 아닐 때 회색
+    final color = isActive ? Colors.black : Colors.grey[400];
     return Expanded(
       child: InkWell(
         onTap: onTap,

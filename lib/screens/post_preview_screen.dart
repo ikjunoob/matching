@@ -1,5 +1,17 @@
+// post_preview_screen.dart
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+/// ===== Design Tokens =====
+const kAccent = Color(0xFF5BA7FF);
+const kPageBg = Color(0xFFF9FAFB);
+const kCardBg = Color(0xFFFFFFFF);
+const kTextPrimary = Color(0xFF374151); // 살짝 연한 검은색
+const kTextMuted = Color(0xFF6B7280);
+const kIconMuted = Color(0xFF9CA3AF);
+const kTagGrey = Color(0xFF9CA3AF);
+const kDDayBg = Color.fromRGBO(0, 0, 0, 0.55);
 
 class PostPreviewScreen extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -36,8 +48,8 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.55),
-        borderRadius: BorderRadius.circular(999),
+        color: kDDayBg,
+        borderRadius: BorderRadius.circular(9999),
       ),
       child: Text(
         text,
@@ -82,46 +94,57 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     return must.every((k) => content.contains(k));
   }
 
-  Widget _sectionFlat({
-    required IconData icon,
+  Widget _sectionRow({
+    required IconData iconRegular,
     required String title,
     required List<String> items,
   }) {
     if (items.isEmpty) return const SizedBox.shrink();
-
+    const double iconSlot = 22;
     final text = items.join('\n');
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(icon, size: 20, color: const Color(0xFF5BA7FF)),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                color: Colors.black87,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: iconSlot,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: FaIcon(iconRegular, size: 18, color: kTextPrimary),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Text(
-          text.isEmpty ? "—" : text,
-          style: const TextStyle(
-            fontSize: 14.5,
-            height: 1.5,
-            color: Color(0xFF6B7280),
           ),
-        ),
-        const SizedBox(height: 12),
-        const Divider(height: 1, color: Color(0xFFE5E7EB)),
-        const SizedBox(height: 12),
-      ],
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: kTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  text.isEmpty ? "—" : text,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    height: 1.5,
+                    color: kTextMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -132,28 +155,36 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     final headcount = widget.post['headcount']?.toString() ?? '';
     final tags = widget.post['tags'] as List? ?? [];
     final content = (widget.post['content'] ?? '') as String;
-    final title = (widget.post['title'] as String).isEmpty
+    final title = ((widget.post['title'] as String?) ?? '').trim().isEmpty
         ? "제목 없음"
         : widget.post['title'];
 
-    final bool useTemplate = _looksLikeTemplate(content);
+    final useTemplate = _looksLikeTemplate(content);
     final parsed = useTemplate
         ? _parseTemplate(content)
         : const <String, List<String>>{};
 
-    // 화면 너비 기반 고정 높이 (16:9 등 원하는 비율로)
-    final double w = MediaQuery.of(context).size.width - 32; // 좌우 padding 고려
-    final double h = w * 9 / 16; // 16:9. 필요하면 4/3 등으로 변경
+    const double imageHeight = 256;
 
     return Scaffold(
+      backgroundColor: kPageBg,
       appBar: AppBar(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        backgroundColor: kCardBg,
+        elevation: 0.5,
+        shadowColor: Colors.black12,
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            color: kTextPrimary,
+          ),
+        ),
         centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(
               _isLiked ? Icons.favorite : Icons.favorite_border,
-              color: _isLiked ? Colors.red : Colors.black,
+              color: _isLiked ? Colors.red : kTextPrimary,
             ),
             onPressed: () {
               setState(() {
@@ -164,128 +195,159 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
           ),
         ],
       ),
+
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.zero,
         children: [
-          // === 이미지: 가로 꽉 채우기 핵심 ===
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: double.infinity, // 가로 꽉
-              height: h, // 고정 높이(비율 유지용)
-              child: Stack(
-                fit: StackFit.expand, // 내부 위젯(이미지) 꽉 채우기
-                children: [
-                  if (imageBytes != null)
-                    Image.memory(
-                      imageBytes,
-                      fit: BoxFit.cover, // 비율 유지하며 잘라서 꽉 채움
-                      alignment: Alignment.center,
-                    )
-                  else
-                    Container(color: const Color(0xFFF2F4F7)),
-                  if (deadline != null)
-                    Positioned(
-                      left: 8,
-                      bottom: 8,
-                      child: _pill(_formatRemain(deadline)),
-                    ),
-                  if (headcount.isNotEmpty)
-                    Positioned(
-                      right: 8,
-                      bottom: 8,
-                      child: _pill("$headcount명 모집"),
-                    ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Text(
-            title,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-
-          Row(
-            children: [
-              if (tags.isNotEmpty)
-                Expanded(
-                  child: Wrap(
-                    spacing: 6,
-                    children: tags
-                        .map(
-                          (t) => Text(
-                            "#$t",
-                            style: const TextStyle(color: Colors.blueAccent),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              const SizedBox(width: 8),
-              const Icon(Icons.remove_red_eye, size: 18, color: Colors.grey),
-              const SizedBox(width: 4),
-              Text("$_viewCount"),
-              const SizedBox(width: 12),
-              Icon(Icons.favorite, size: 18, color: Colors.red.shade400),
-              const SizedBox(width: 4),
-              Text("$_likeCount"),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          if (!useTemplate)
-            Text(
-              content.isEmpty ? "내용이 없습니다." : content,
-              style: const TextStyle(fontSize: 16, height: 1.45),
-            )
-          else
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+          // 이미지
+          SizedBox(
+            width: MediaQuery.of(context).size.width,
+            height: imageHeight,
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                _sectionFlat(
-                  icon: Icons.group_rounded,
-                  title: "모집 대상",
-                  items: parsed["모집 대상"] ?? const [],
-                ),
-                _sectionFlat(
-                  icon: Icons.event_note_rounded,
-                  title: "활동 내용",
-                  items: parsed["활동 내용"] ?? const [],
-                ),
-                _sectionFlat(
-                  icon: Icons.bolt_rounded,
-                  title: "필요 역량",
-                  items: parsed["필요 역량"] ?? const [],
-                ),
-                _sectionFlat(
-                  icon: Icons.info_outline_rounded,
-                  title: "추가 정보",
-                  items: parsed["추가 정보"] ?? const [],
-                ),
-                if ((parsed.values.fold<int>(0, (a, b) => a + b.length)) == 0)
-                  const Text(
-                    "템플릿 항목을 입력하면 미리보기에 정리되어 보여집니다.",
-                    style: TextStyle(color: Colors.black54),
+                if (imageBytes != null)
+                  Image.memory(
+                    imageBytes,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                  )
+                else
+                  Container(color: const Color(0xFFF2F4F7)),
+                if (deadline != null)
+                  Positioned(
+                    left: 8,
+                    bottom: 8,
+                    child: _pill(_formatRemain(deadline)),
+                  ),
+                if (headcount.isNotEmpty)
+                  Positioned(
+                    right: 8,
+                    bottom: 8,
+                    child: _pill("$headcount명 모집"),
                   ),
               ],
             ),
+          ),
+
+          // 본문 (패딩 적용)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 제목
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: kTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // 태그 + 메타
+                Row(
+                  children: [
+                    Flexible(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        child: Row(
+                          children: (tags.isNotEmpty ? tags : const <String>[])
+                              .map(
+                                (t) => Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: Text(
+                                    "#$t",
+                                    style: const TextStyle(
+                                      color: kTagGrey,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const FaIcon(
+                      FontAwesomeIcons.eye,
+                      size: 16,
+                      color: kIconMuted,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      "$_viewCount",
+                      style: const TextStyle(color: kIconMuted, fontSize: 14),
+                    ),
+                    const SizedBox(width: 14),
+                    const FaIcon(
+                      FontAwesomeIcons.solidHeart,
+                      size: 16,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      "$_likeCount",
+                      style: const TextStyle(color: kIconMuted, fontSize: 14),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // 섹션
+                if (useTemplate) ...[
+                  _sectionRow(
+                    iconRegular: FontAwesomeIcons.addressCard,
+                    title: "모집 대상",
+                    items: parsed["모집 대상"] ?? const [],
+                  ),
+                  _sectionRow(
+                    iconRegular: FontAwesomeIcons.fileLines,
+                    title: "활동 내용",
+                    items: parsed["활동 내용"] ?? const [],
+                  ),
+                  _sectionRow(
+                    iconRegular: FontAwesomeIcons.circleCheck,
+                    title: "필요 역량",
+                    items: parsed["필요 역량"] ?? const [],
+                  ),
+                  _sectionRow(
+                    iconRegular: FontAwesomeIcons.circleInfo,
+                    title: "추가 정보",
+                    items: parsed["추가 정보"] ?? const [],
+                  ),
+                ] else ...[
+                  Text(
+                    content.isEmpty ? "내용이 없습니다." : content,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.45,
+                      color: kTextPrimary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
+
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: ElevatedButton(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF5BA7FF),
+              elevation: 0,
+              backgroundColor: kAccent,
               minimumSize: const Size.fromHeight(54),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text(

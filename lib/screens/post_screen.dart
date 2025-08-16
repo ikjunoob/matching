@@ -1,3 +1,4 @@
+// post_screen.dart
 import "dart:io";
 import "dart:typed_data";
 import "package:flutter/foundation.dart" show kIsWeb;
@@ -8,6 +9,23 @@ import "package:permission_handler/permission_handler.dart";
 import "package:intl/intl.dart";
 import 'post_preview_screen.dart';
 import 'question_builder_screen.dart';
+
+/// ===== Design Tokens (표 기준) =====
+const kAccent = Color(0xFF5BA7FF); // 포커스/포인트
+const kBorder = Color(0xFFE5E7EB); // 테두리
+const kPageBg = Color(0xFFF9FAFB); // 메인 배경
+const kCardBg = Color(0xFFFFFFFF); // 카드/서브 배경
+const kTextPrimary = Color(0xFF111827); // 본문 텍스트
+const kTextMuted = Color(0xFF6B7280); // 보조 텍스트
+const kScrim = Color.fromRGBO(0, 0, 0, 0.2); // 스크림블
+const kDDayBg = Color.fromRGBO(0, 0, 0, 0.55); // D-Day pill 배경
+
+/// 입력 스타일 규격(표)
+const kFieldRadius = 8.0; // 입력창/버튼 둥글기
+const kFieldHPad = 12.0; // 입력창 안쪽 가로 여백
+const kFieldVPad = 12.0; // 입력창 안쪽 세로 여백
+const kFieldFont = 16.0; // 입력 글자 크기
+const kLabelFont = 14.0; // 라벨 글자 크기
 
 class PostScreen extends StatefulWidget {
   const PostScreen({super.key});
@@ -101,7 +119,6 @@ class _PostScreenState extends State<PostScreen> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) {
-      // 폼 전체 유효성 실패 시 스낵바 추가 안내
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("필수 항목을 확인해 주세요.")));
@@ -147,7 +164,9 @@ class _PostScreenState extends State<PostScreen> {
       _contentBackup = _contentCtrl.text;
       _contentCtrl
         ..text = _templateText
-        ..selection = TextSelection.collapsed(offset: _templateText.length);
+        ..selection = const TextSelection.collapsed(
+          offset: _templateText.length,
+        );
       setState(() => _templateInserted = true);
     }
   }
@@ -167,6 +186,7 @@ class _PostScreenState extends State<PostScreen> {
       }
       return;
     }
+
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       final res = await FilePicker.platform.pickFiles(
         type: FileType.image,
@@ -189,6 +209,7 @@ class _PostScreenState extends State<PostScreen> {
       }
       return;
     }
+
     PermissionStatus status;
     if (Platform.isAndroid) {
       status = await Permission.photos.request();
@@ -203,6 +224,7 @@ class _PostScreenState extends State<PostScreen> {
       );
       return;
     }
+
     if (!status.isGranted) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -211,6 +233,7 @@ class _PostScreenState extends State<PostScreen> {
       }
       return;
     }
+
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
@@ -264,30 +287,39 @@ class _PostScreenState extends State<PostScreen> {
   InputDecoration _whiteFieldDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: const TextStyle(
+        color: kTextMuted,
+        fontSize: kFieldFont * 0.95,
+      ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: kCardBg,
+      // 기본/비활성
       border: const OutlineInputBorder(
-        borderSide: BorderSide(color: Color(0xFFE6E8EB)),
-        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: kBorder, width: 1),
+        borderRadius: BorderRadius.all(Radius.circular(kFieldRadius)),
       ),
       enabledBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Color.fromARGB(255, 109, 109, 109)),
-        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: kBorder, width: 1),
+        borderRadius: BorderRadius.all(Radius.circular(kFieldRadius)),
       ),
+      // 포커스(요청 색상)
       focusedBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Color(0xFF5BA7FF)),
-        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: kAccent, width: 2), // Color(0xFF5BA7FF)
+        borderRadius: BorderRadius.all(Radius.circular(kFieldRadius)),
       ),
+      // 에러
       errorBorder: const OutlineInputBorder(
-        // 에러 시 빨간 테두리
-        borderSide: BorderSide(color: Colors.red),
-        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: Colors.red, width: 1),
+        borderRadius: BorderRadius.all(Radius.circular(kFieldRadius)),
       ),
       focusedErrorBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.red),
-        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: Colors.red, width: 2),
+        borderRadius: BorderRadius.all(Radius.circular(kFieldRadius)),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: kFieldHPad,
+        vertical: kFieldVPad,
+      ),
     );
   }
 
@@ -296,7 +328,11 @@ class _PostScreenState extends State<PostScreen> {
       padding: const EdgeInsets.only(left: 6.0),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        style: const TextStyle(
+          fontSize: kLabelFont,
+          fontWeight: FontWeight.w700,
+          color: kTextPrimary,
+        ),
       ),
     );
   }
@@ -312,34 +348,34 @@ class _PostScreenState extends State<PostScreen> {
       fontSize: 15,
       height: 1.35,
       textBaseline: TextBaseline.alphabetic,
-      color: Colors.black87,
+      color: kTextPrimary,
     ),
   );
 
   @override
   Widget build(BuildContext context) {
-    const lightSky = Color(0xFF8EC9FF);
-
     return Scaffold(
+      backgroundColor: kPageBg,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: Colors.black,
+            color: kTextPrimary,
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "구인구직 개설",
+          "구해요 등록",
           style: TextStyle(
-            color: Colors.black,
+            color: kTextPrimary,
             fontWeight: FontWeight.w700,
-            fontSize: 20,
+            fontSize: 18,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: kCardBg,
         elevation: 0.5,
+        shadowColor: Colors.black12,
         actions: [
           TextButton(
             onPressed: () {
@@ -353,15 +389,11 @@ class _PostScreenState extends State<PostScreen> {
             },
             child: const Text(
               "미리보기",
-              style: TextStyle(
-                color: Color(0xFF5BA7FF),
-                fontWeight: FontWeight.w700,
-              ),
+              style: TextStyle(color: kAccent, fontWeight: FontWeight.w700),
             ),
           ),
         ],
       ),
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         child: Form(
@@ -370,15 +402,15 @@ class _PostScreenState extends State<PostScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 이미지
+              // 대표 이미지 박스: 가로 100%, 세로 192px, 둥글기 8px
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
-                  height: 180,
+                  height: 192,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE6E8EB)),
+                    color: kCardBg,
+                    borderRadius: BorderRadius.circular(kFieldRadius),
+                    border: Border.all(color: kBorder, width: 1),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: Stack(
@@ -397,12 +429,12 @@ class _PostScreenState extends State<PostScreen> {
                               Icon(
                                 Icons.camera_alt_rounded,
                                 size: 36,
-                                color: Colors.grey,
+                                color: kTextMuted,
                               ),
                               SizedBox(height: 8),
                               Text(
                                 "클릭하여 이미지 추가",
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(color: kTextMuted),
                               ),
                             ],
                           ),
@@ -431,11 +463,10 @@ class _PostScreenState extends State<PostScreen> {
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
                 isExpanded: true,
-                isDense: false,
                 alignment: AlignmentDirectional.topStart,
                 itemHeight: 48,
-                dropdownColor: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                dropdownColor: kCardBg,
+                borderRadius: BorderRadius.circular(kFieldRadius),
                 menuMaxHeight: 320,
                 icon: const Icon(
                   Icons.keyboard_arrow_down_rounded,
@@ -445,7 +476,7 @@ class _PostScreenState extends State<PostScreen> {
                   fontSize: 15,
                   height: 1.35,
                   textBaseline: TextBaseline.alphabetic,
-                  color: Colors.black87,
+                  color: kTextPrimary,
                 ),
                 decoration: _whiteFieldDecoration(),
                 selectedItemBuilder: (context) => _categories
@@ -475,6 +506,10 @@ class _PostScreenState extends State<PostScreen> {
               const SizedBox(height: 6),
               TextFormField(
                 controller: _titleCtrl,
+                style: const TextStyle(
+                  fontSize: kFieldFont,
+                  color: kTextPrimary,
+                ),
                 decoration: _whiteFieldDecoration(hint: "게시물 제목을 입력하세요"),
                 validator: (v) => _requiredValidator(v, "제목"),
               ),
@@ -486,14 +521,15 @@ class _PostScreenState extends State<PostScreen> {
                   const Spacer(),
                   Container(
                     decoration: BoxDecoration(
-                      color: (_templateInserted
-                          ? lightSky.withOpacity(0.18)
-                          : const Color(0xFFEFF6FF)),
+                      color: _templateInserted
+                          ? kAccent.withOpacity(0.14)
+                          : const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: _templateInserted
-                            ? lightSky
+                            ? kAccent
                             : const Color(0xFFD9E6FF),
+                        width: 1,
                       ),
                     ),
                     child: TextButton(
@@ -504,13 +540,13 @@ class _PostScreenState extends State<PostScreen> {
                           vertical: 4,
                         ),
                         minimumSize: Size.zero,
+                        foregroundColor: kTextPrimary,
                       ),
                       child: const Text(
                         "질문 템플릿 추가",
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: Colors.black,
                         ),
                       ),
                     ),
@@ -521,10 +557,20 @@ class _PostScreenState extends State<PostScreen> {
               TextFormField(
                 controller: _contentCtrl,
                 maxLines: 7,
+                style: const TextStyle(
+                  fontSize: kFieldFont,
+                  color: kTextPrimary,
+                  height: 1.4,
+                ),
                 decoration: _whiteFieldDecoration(hint: "상세 내용을 작성해주세요")
                     .copyWith(
                       fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.fromLTRB(14, 20, 14, 4),
+                      contentPadding: const EdgeInsets.fromLTRB(
+                        kFieldHPad,
+                        20,
+                        kFieldHPad,
+                        8,
+                      ),
                     ),
                 validator: (v) => _requiredValidator(v, "내용"),
               ),
@@ -536,6 +582,10 @@ class _PostScreenState extends State<PostScreen> {
                 controller: _tagCtrl,
                 focusNode: _tagFocus,
                 onChanged: _onTagChanged,
+                style: const TextStyle(
+                  fontSize: kFieldFont,
+                  color: kTextPrimary,
+                ),
                 decoration: _whiteFieldDecoration(hint: "#태그 입력"),
                 validator: _tagsValidator,
               ),
@@ -552,6 +602,10 @@ class _PostScreenState extends State<PostScreen> {
                         TextFormField(
                           controller: _headcountCtrl,
                           keyboardType: TextInputType.number,
+                          style: const TextStyle(
+                            fontSize: kFieldFont,
+                            color: kTextPrimary,
+                          ),
                           decoration: _whiteFieldDecoration(hint: "예: 5"),
                           validator: _headcountValidator,
                         ),
@@ -575,17 +629,21 @@ class _PostScreenState extends State<PostScreen> {
                                   ).format(_deadline!),
                           ),
                           onTap: _pickDate,
+                          style: const TextStyle(
+                            fontSize: kFieldFont,
+                            color: kTextPrimary,
+                          ),
                           decoration: _whiteFieldDecoration(hint: "연도. 월. 일.")
                               .copyWith(
                                 suffixIcon: IconButton(
                                   tooltip: "날짜 선택",
                                   icon: const Icon(
                                     Icons.calendar_month_rounded,
+                                    color: kTextPrimary,
                                   ),
                                   onPressed: _pickDate,
                                 ),
                               ),
-                          // _deadline 여부로 검증
                           validator: (_) =>
                               _deadline == null ? "마감일을 선택해 주세요." : null,
                         ),
@@ -596,11 +654,11 @@ class _PostScreenState extends State<PostScreen> {
               ),
 
               const SizedBox(height: 20),
+              // 등록 버튼: 둥글기 8px, 그림자 0 5px 20px rgba(59,138,246,0.4)
               SizedBox(
                 height: 54,
                 child: ElevatedButton(
                   onPressed: () async {
-                    // 먼저 현재 화면 유효성 검사
                     if (!_formKey.currentState!.validate()) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("필수 항목을 확인해 주세요.")),
@@ -613,12 +671,14 @@ class _PostScreenState extends State<PostScreen> {
                         builder: (_) => const QuestionBuilderScreen(),
                       ),
                     );
-                    // if (questions != null) { ... 이어서 사용 }
+                    // 필요 시 questions 사용
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5BA7FF),
+                    elevation: 10,
+                    shadowColor: const Color.fromRGBO(59, 138, 246, 0.4),
+                    backgroundColor: kAccent,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(kFieldRadius),
                     ),
                   ),
                   child: const Text(
@@ -652,8 +712,8 @@ class _PostScreenState extends State<PostScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.55),
-        borderRadius: BorderRadius.circular(999),
+        color: kDDayBg,
+        borderRadius: BorderRadius.circular(9999),
       ),
       child: Text(
         text,

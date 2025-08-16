@@ -1,5 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'post_screen.dart';
+
+/// ===== Design Tokens =====
+const kAccent = Color(0xFF00FFFB); // 상단 인디케이터/포인트
+const kPageBg = Color(0xFFF9FAFB); // 페이지 배경
+const kDivider = Color(0xFFE5E7EB); // 탭바/바텀 보더
+const kTextPrimary = Color(0xFF111827);
+const kTextMuted = Color(0xFF6B7280);
+const kWhite = Colors.white;
+const kHeartRed = Color(0xFFFF4D4D); // 하트(좋아요)
+const kHeartGrey = Color(0xFFD1D5DB); // 비활성 하트 외곽
+const kUrgentRed = Color(0xFFFF4D4D); // "마감임박" 배너
+
+// 이미지/카드 여백 관련
+const kThumbSize = 100.0; // 썸네일 크기 (88 → 100으로 확대)
+const kCardPad = 10.0; // 카드 패딩 (12 → 10으로 살짝 줄임)
 
 class AskForScreen extends StatefulWidget {
   const AskForScreen({super.key});
@@ -14,11 +30,11 @@ class _AskForScreenState extends State<AskForScreen> {
 
   final List<String> _categories = ["전체", "스터디", "재능공유", "물품대여", "운동메이트"];
 
-  // 더미 데이터 (이미지 주소 수정됨)
+  // 더미 데이터
   final List<Map<String, dynamic>> _posts = [
     {
       "image":
-          "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?q=80&w=1000&auto=format&fit=crop", // 헬스장 이미지
+          "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?q=80&w=1000&auto=format&fit=crop",
       "title": "운동 메이트 구해요 (헬스)",
       "tags": ["운동", "헬스", "메이트"],
       "comments": 3,
@@ -32,7 +48,7 @@ class _AskForScreenState extends State<AskForScreen> {
     },
     {
       "image":
-          "https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2070&auto=format&fit=crop", // 책 이미지
+          "https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2070&auto=format&fit=crop",
       "title": "중고 전공서적 판매합니다",
       "tags": ["중고거래", "전공서적"],
       "comments": 7,
@@ -46,7 +62,7 @@ class _AskForScreenState extends State<AskForScreen> {
     },
     {
       "image":
-          "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1887&auto=format&fit=crop", // 음식 이미지
+          "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1887&auto=format&fit=crop",
       "title": "같이 점심 먹을 사람 구해요!",
       "tags": ["점심", "맛집", "같이먹어요"],
       "comments": 17,
@@ -56,11 +72,11 @@ class _AskForScreenState extends State<AskForScreen> {
       "isLiked": false,
       "createdAt": DateTime.now().subtract(const Duration(hours: 10)),
       "deadlineAt": DateTime.now().add(const Duration(hours: 6)),
-      "urgentOverlay": true, // ★ 3번째만 "마감임박" 리본 표시
+      "urgentOverlay": true, // <- 3번째만 "마감임박"
     },
     {
       "image":
-          "https://images.unsplash.com/photo-1592899677977-9c1035e235e7?q=80&w=1887&auto=format&fit=crop", // 충전기/전자기기 이미지
+          "https://images.unsplash.com/photo-1592899677977-9c1035e235e7?q=80&w=1887&auto=format&fit=crop",
       "title": "아이패드 충전기 빌려주실 분?",
       "tags": ["물품공유", "아이패드", "충전기"],
       "comments": 5,
@@ -74,7 +90,7 @@ class _AskForScreenState extends State<AskForScreen> {
     },
     {
       "image":
-          "https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1887&auto=format&fit=crop", // 팀 회의 이미지
+          "https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1887&auto=format&fit=crop",
       "title": "공모전 팀원 모집합니다 (기획/디자인)",
       "tags": ["팀원모집", "공모전", "기획", "디자인"],
       "comments": 8,
@@ -147,7 +163,6 @@ class _AskForScreenState extends State<AskForScreen> {
           if (d.isBefore(now)) return 2; // 이미 마감
           return 1; // 진행중
         }
-
         sorted.sort((a, b) {
           final ra = rank(a), rb = rank(b);
           if (ra != rb) return ra.compareTo(rb);
@@ -171,123 +186,123 @@ class _AskForScreenState extends State<AskForScreen> {
     final visiblePosts = _applySort(filtered);
 
     return Scaffold(
+      backgroundColor: kPageBg,
       body: Column(
         children: [
           _buildSortAndCategoryBar(),
           Expanded(
-            child: Container(
-              color: const Color(0xFFF9FAFB), // body 백그라운드 #F9FAFB
-              child: ListView.builder(
-                padding: const EdgeInsets.only(bottom: 140),
-                itemCount: visiblePosts.length,
-                itemBuilder: (context, index) {
-                  final post = visiblePosts[index];
-                  final originalIdx = _posts.indexWhere(
-                    (p) => identical(p, post),
-                  );
-                  final idx = originalIdx == -1 ? index : originalIdx;
-                  return AskForPostCard(
-                    post: post,
-                    onLikeTap: () => _toggleLike(idx),
-                  );
-                },
-              ),
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 140),
+              itemCount: visiblePosts.length,
+              itemBuilder: (context, index) {
+                final post = visiblePosts[index];
+                final originalIdx = _posts.indexWhere(
+                  (p) => identical(p, post),
+                );
+                final idx = originalIdx == -1 ? index : originalIdx;
+                return AskForPostCard(
+                  post: post,
+                  onLikeTap: () => _toggleLike(idx),
+                );
+              },
             ),
           ),
         ],
       ),
+      // floatingActionButton: _CreateFab(onTap: _openCreateAndAppend),
     );
   }
 
-  // 상단 정렬/카테고리 바 (기존 스타일 유지)
+  /// ===== 상단 정렬/카테고리 바 =====
   Widget _buildSortAndCategoryBar() {
     const double scale = 0.8;
-    const accent = Color(0xFF00FFFB);
 
     final double chipRadius = 14.0 * scale;
     final double chipHPad = 10.0 * scale;
     final double chipVPad = 6.0 * scale;
     final double fontSize = 12.0 * scale;
-    final double iconSize = 16.0 * scale;
+    final double iconSize = 14.0 * scale;
 
     return Container(
-      decoration: const BoxDecoration(color: Colors.white),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4.0 * scale),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Transform.translate(
-        offset: const Offset(0, -4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: ["최신순", "인기순", "마감순"].map((sort) {
-                final selected = _selectedSort == sort;
-                return Padding(
-                  padding: EdgeInsets.only(right: 6.0 * scale),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(chipRadius),
-                    onTap: () => setState(() => _selectedSort = sort),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: chipHPad,
-                        vertical: chipVPad,
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 44),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10.0 * scale),
+      decoration: const BoxDecoration(
+        color: kWhite,
+        border: Border(bottom: BorderSide(color: kDivider, width: 1)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // 정렬 칩
+          Row(
+            children: ["최신순", "인기순", "마감순"].map((sort) {
+              final selected = _selectedSort == sort;
+              return Padding(
+                padding: EdgeInsets.only(right: 6.0 * scale),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(chipRadius),
+                  onTap: () => setState(() => _selectedSort = sort),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: chipHPad,
+                      vertical: chipVPad,
+                    ),
+                    decoration: BoxDecoration(
+                      color: kWhite,
+                      borderRadius: BorderRadius.circular(chipRadius),
+                      border: Border.all(
+                        color: selected ? kTextPrimary : kDivider,
+                        width: 1,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(chipRadius),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(
-                              selected ? 0.08 : 0.03,
-                            ),
-                            blurRadius: selected ? 6 : 4,
-                            offset: const Offset(0, 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(
+                            selected ? 0.08 : 0.03,
                           ),
-                        ],
-                        border: Border.all(
-                          color: selected
-                              ? Colors.black
-                              : const Color(0xFFE6E8EB),
+                          blurRadius: selected ? 6 : 3,
+                          offset: const Offset(0, 1),
                         ),
-                      ),
-                      child: Text(
-                        sort,
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          height: 1.1,
-                          color: Colors.black,
-                          fontWeight: selected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                        ),
+                      ],
+                    ),
+                    child: Text(
+                      sort,
+                      style: TextStyle(
+                        fontSize: fontSize,
+                        height: 1.1,
+                        color: kTextPrimary,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                       ),
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-            _CategoryChipMenu(
-              label: _selectedCategory,
-              items: _categories,
-              onSelected: (v) => setState(() => _selectedCategory = v),
-              accent: accent,
-              radius: chipRadius,
-              hPad: chipHPad,
-              vPad: chipVPad,
-              fontSize: fontSize,
-              iconSize: iconSize,
-              menuItemHeight: 40.0 * scale,
-              menuFontSize: 14.0 * scale,
-              maxMenuWidth: 130.0 * scale,
-            ),
-          ],
-        ),
+                ),
+              );
+            }).toList(),
+          ),
+          // 카테고리 드롭다운
+          _CategoryChipMenu(
+            label: _selectedCategory,
+            items: _categories,
+            onSelected: (v) => setState(() => _selectedCategory = v),
+            accent: kAccent,
+            radius: chipRadius,
+            hPad: chipHPad,
+            vPad: chipVPad,
+            fontSize: fontSize,
+            iconSize: iconSize,
+            menuItemHeight: 40.0 * scale,
+            menuFontSize: 14.0 * scale,
+            maxMenuWidth: 130.0 * scale,
+          ),
+        ],
       ),
     );
   }
 }
 
-// ========= 카테고리 메뉴 =========
+/// ========= 카테고리 메뉴 & 관련 위젯 =========
 class _CategoryChipMenu extends StatelessWidget {
   final String label;
   final List<String> items;
@@ -338,8 +353,8 @@ class _CategoryChipMenu extends StatelessWidget {
         final selected = await showMenu<String>(
           context: context,
           position: position,
-          color: Colors.white,
-          elevation: 8,
+          color: kWhite,
+          elevation: 10,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -421,7 +436,7 @@ class _HoverMenuTileState extends State<_HoverMenuTile> {
                     fontWeight: widget.isSelected
                         ? FontWeight.w700
                         : FontWeight.w500,
-                    color: Colors.black,
+                    color: kTextPrimary,
                   ),
                 ),
               ),
@@ -431,7 +446,7 @@ class _HoverMenuTileState extends State<_HoverMenuTile> {
                 height: 18,
                 child: Opacity(
                   opacity: widget.isSelected ? 1 : 0,
-                  child: const Icon(Icons.check, size: 18, color: Colors.black),
+                  child: const Icon(Icons.check, size: 18, color: kTextPrimary),
                 ),
               ),
             ],
@@ -477,9 +492,9 @@ class _ChipButton extends StatelessWidget {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: kWhite,
                 borderRadius: BorderRadius.circular(radius),
-                border: Border.all(color: const Color(0xFFE6E8EB)),
+                border: Border.all(color: kDivider),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -489,15 +504,15 @@ class _ChipButton extends StatelessWidget {
                     style: TextStyle(
                       fontSize: fontSize,
                       height: 1.1,
-                      color: Colors.black,
+                      color: kTextPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   SizedBox(width: 4 * (fontSize / 12.0)),
-                  Icon(
-                    Icons.arrow_drop_down,
+                  FaIcon(
+                    FontAwesomeIcons.chevronDown,
                     size: iconSize,
-                    color: Colors.black,
+                    color: kTextPrimary,
                   ),
                 ],
               ),
@@ -509,7 +524,7 @@ class _ChipButton extends StatelessWidget {
   }
 }
 
-// ===== 리스트 카드 =====
+/// ===== 리스트 카드 =====
 class AskForPostCard extends StatelessWidget {
   final Map<String, dynamic> post;
   final VoidCallback onLikeTap;
@@ -521,41 +536,32 @@ class AskForPostCard extends StatelessWidget {
   });
 
   bool get _hasDeadline => post["deadlineAt"] is DateTime;
-
-  bool get _isExpired {
-    if (!_hasDeadline) return false;
-    return (post["deadlineAt"] as DateTime).isBefore(DateTime.now());
-  }
-
+  bool get _isExpired =>
+      _hasDeadline && (post["deadlineAt"] as DateTime).isBefore(DateTime.now());
   bool get _showUrgentOverlay =>
       (post["urgentOverlay"] is bool) && post["urgentOverlay"] == true;
 
   @override
   Widget build(BuildContext context) {
-    const titleColor = Color(0xFF1F2937);
-    const metaColor = Color(0xFF6B7280);
-    const likeRed = Color(0xFFE14040);
-
     final String category =
         (post["category"] as String?)?.trim().isNotEmpty == true
         ? post["category"]
         : "기타";
 
-    // 마감된 글: 전체 비활성화 + 연해 보이게
     final double opacity = _isExpired ? 0.55 : 1.0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: IgnorePointer(
-        ignoring: _isExpired, // 비활성화
+        ignoring: _isExpired,
         child: Opacity(
           opacity: opacity,
           child: Stack(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(kCardPad),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: kWhite,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -568,25 +574,22 @@ class AskForPostCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 썸네일 (88x88, 이미지 가득 + 리본 오버레이)
+                    // 썸네일
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: SizedBox(
-                        width: 88,
-                        height: 88,
+                        width: kThumbSize,
+                        height: kThumbSize,
                         child: Stack(
                           children: [
-                            // 이미지 (X/에러표시 제거: errorBuilder로 깔끔 처리)
                             Positioned.fill(
                               child: Image.network(
                                 post["image"] ?? "",
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: Colors.grey[200], // 단색 플레이스홀더
-                                ),
+                                errorBuilder: (_, __, ___) =>
+                                    Container(color: Colors.grey[200]),
                               ),
                             ),
-                            // "마감임박" 리본 (3번째만, 이미지 상단 전체 너비)
                             if (_showUrgentOverlay)
                               Positioned(
                                 left: 0,
@@ -595,13 +598,11 @@ class AskForPostCard extends StatelessWidget {
                                 child: Container(
                                   height: 24,
                                   alignment: Alignment.center,
-                                  decoration: const BoxDecoration(
-                                    color: likeRed, // #E14040
-                                  ),
+                                  color: kUrgentRed,
                                   child: const Text(
                                     "마감임박",
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: kWhite,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w800,
                                       height: 1.0,
@@ -631,7 +632,7 @@ class AskForPostCard extends StatelessWidget {
                                   style: TextStyle(
                                     fontWeight: FontWeight.w800,
                                     fontSize: 14,
-                                    color: titleColor, // #1F2937
+                                    color: kTextPrimary,
                                     decoration: _isExpired
                                         ? TextDecoration.lineThrough
                                         : TextDecoration.none,
@@ -642,12 +643,14 @@ class AskForPostCard extends StatelessWidget {
                               ),
                               GestureDetector(
                                 onTap: onLikeTap,
-                                child: Icon(
+                                child: FaIcon(
                                   post["isLiked"]
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: post["isLiked"] ? likeRed : metaColor,
-                                  size: 24,
+                                      ? FontAwesomeIcons.solidHeart
+                                      : FontAwesomeIcons.heart,
+                                  size: 20,
+                                  color: post["isLiked"]
+                                      ? kHeartRed
+                                      : kHeartGrey,
                                 ),
                               ),
                             ],
@@ -663,60 +666,59 @@ class AskForPostCard extends StatelessWidget {
                                 "#$tag",
                                 style: const TextStyle(
                                   fontSize: 10,
-                                  color: metaColor, // #6B7280
+                                  color: kTextMuted,
                                 ),
                               );
                             }).toList(),
                           ),
-                          const SizedBox(height: 10),
 
-                          // 수치(댓글/조회/좋아요)
+                          const SizedBox(height: 38),
+                          
                           Row(
                             children: [
-                              const Icon(
-                                Icons.chat_bubble_outline,
-                                size: 14,
-                                color: metaColor,
+                              const FaIcon(
+                                FontAwesomeIcons.commentDots,
+                                size: 13,
+                                color: kTextMuted,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 "${post["comments"]}",
                                 style: const TextStyle(
                                   fontSize: 11,
-                                  color: metaColor,
+                                  color: kTextMuted,
                                 ),
                               ),
                               const SizedBox(width: 10),
-                              const Icon(
-                                Icons.remove_red_eye_outlined,
-                                size: 14,
-                                color: metaColor,
+                              const FaIcon(
+                                FontAwesomeIcons.eye,
+                                size: 13,
+                                color: kTextMuted,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 "${post["views"]}",
                                 style: const TextStyle(
                                   fontSize: 11,
-                                  color: metaColor,
+                                  color: kTextMuted,
                                 ),
                               ),
                               const SizedBox(width: 10),
-                              const Icon(
-                                Icons.favorite,
-                                size: 14,
-                                color: likeRed,
+                              const FaIcon(
+                                FontAwesomeIcons.solidHeart,
+                                size: 13,
+                                color: kHeartRed,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 "${post["likes"]}",
                                 style: const TextStyle(
                                   fontSize: 11,
-                                  color: likeRed,
+                                  color: kHeartRed,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
                         ],
                       ),
                     ),
@@ -728,7 +730,12 @@ class AskForPostCard extends StatelessWidget {
               Positioned(
                 right: 12,
                 bottom: 12,
-                child: _CategoryChip(label: category),
+                child: _CategoryChip(
+                  label:
+                      (post["category"] as String?)?.trim().isNotEmpty == true
+                      ? post["category"]
+                      : "기타",
+                ),
               ),
             ],
           ),
@@ -747,17 +754,38 @@ class _CategoryChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F7F9),
+        color: const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE6E8EB)),
+        border: Border.all(color: kDivider),
       ),
       child: Text(
         label,
         style: const TextStyle(
           fontSize: 8,
-          color: Colors.black87,
+          color: kTextPrimary,
           fontWeight: FontWeight.w600,
         ),
+      ),
+    );
+  }
+}
+
+/// 필요 시 사용하는 플로팅 + 버튼 (요구 규격: 56x56, 원형)
+class _CreateFab extends StatelessWidget {
+  final VoidCallback onTap;
+  const _CreateFab({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 56,
+      height: 56,
+      child: RawMaterialButton(
+        onPressed: onTap,
+        shape: const CircleBorder(),
+        fillColor: kWhite,
+        elevation: 6,
+        child: const FaIcon(FontAwesomeIcons.plus, color: kTextPrimary),
       ),
     );
   }

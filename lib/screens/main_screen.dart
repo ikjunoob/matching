@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart'; // 홈(추천) 화면
 import 'group_screen.dart'; // 모임 화면
-import 'post_screen.dart'; // 글쓰기 화면
 import 'calendar_screen.dart'; // 캘린더 화면
 import 'profile_screen.dart'; // 프로필(마이페이지) 화면
 import 'custom_bottom_nav_bar.dart'; // 커스텀 하단 네비게이션바
+import 'matching_screen.dart';
 
 // -------------------- MainScreen: 앱 전체의 메인/탭/네비게이션 컨테이너 --------------------
 class MainScreen extends StatefulWidget {
@@ -74,7 +74,7 @@ class _MainScreenState extends State<MainScreen> {
       case 1:
         return const GroupScreen(); // 모임 화면
       case 2:
-        return const PostScreen(); // 글쓰기 화면
+        return const MatchingScreen(); // 글쓰기 화면
       case 3:
         return const CalendarScreen(); // 캘린더 화면
       case 4:
