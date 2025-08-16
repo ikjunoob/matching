@@ -110,12 +110,12 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
         : (faIconSize + 6);
     final text = items.join('\n');
 
-    Widget _leadingIcon() {
+    Widget leadingIcon() {
       if (customIcon != null) {
         return Transform.translate(
           offset: const Offset(-2, 0), // 👈 왼쪽으로 3px 이동
           child: Image.asset(
-            customIcon!,
+            customIcon,
             width: customIconSize,
             height: customIconSize,
             fit: BoxFit.contain,
@@ -150,7 +150,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                 alignment: Alignment.topLeft,
                 child: Transform.translate(
                   offset: const Offset(0, 0), // ← 왼쪽으로 3px 이동
-                  child: _leadingIcon(),
+                  child: leadingIcon(),
                 ),
               ),
             ),

@@ -10,6 +10,8 @@ import "package:permission_handler/permission_handler.dart";
 import "package:intl/intl.dart";
 import 'post_preview_screen.dart';
 import 'question_builder_screen.dart';
+// dropdown_button2 패키지를 import 합니다.
+import 'package:dropdown_button2/dropdown_button2.dart';
 
 /// ===== Design Tokens (표 기준) =====
 const kAccent = Color(0xFF5BA7FF); // 포커스/포인트
@@ -385,16 +387,12 @@ class _PostScreenState extends State<PostScreen> {
 
   Text _dropdownText(String s) => Text(
     s,
-    strutStyle: const StrutStyle(
-      height: 1.35,
-      leading: 0,
-      forceStrutHeight: true,
-    ),
+    // strutStyle을 제거하거나 height 속성을 제거해야
+    // dropdown_button2가 정상적으로 동작합니다.
     style: const TextStyle(
       fontSize: 15,
-      height: 1.35,
-      textBaseline: TextBaseline.alphabetic,
       color: kTextPrimary,
+      // height: 1.35, // 이 속성이 있으면 메뉴 높이 계산에 오류가 생길 수 있음
     ),
   );
 
@@ -506,47 +504,86 @@ class _PostScreenState extends State<PostScreen> {
               _sectionLabel("카테고리"),
               const SizedBox(height: 6),
 
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                isExpanded: true,
-                alignment: AlignmentDirectional.topStart,
-                itemHeight: 48,
-                dropdownColor: kCardBg,
-                borderRadius: BorderRadius.circular(kFieldRadius),
-                menuMaxHeight: 320,
-                icon: const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Colors.black54,
-                ),
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.35,
-                  textBaseline: TextBaseline.alphabetic,
-                  color: kTextPrimary,
-                ),
-                decoration: _whiteFieldDecoration(),
-                selectedItemBuilder: (context) => _categories
-                    .map(
-                      (e) => Align(
-                        alignment: Alignment.centerLeft,
-                        child: _dropdownText(e),
+              // ▼▼▼▼▼ 기존 DropdownButtonFormField를 아래 코드로 교체 ▼▼▼▼▼
+              FormField<String>(
+                initialValue: _selectedCategory,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "카테고리를 선택해 주세요.";
+                  }
+                  return null;
+                },
+                builder: (FormFieldState<String> state) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DropdownButtonHideUnderline(
+                        child: DropdownButton2<String>(
+                          isExpanded: true,
+                          value: _selectedCategory,
+                          items: _categories
+                              .map(
+                                (item) => DropdownMenuItem<String>(
+                                  value: item,
+                                  child: _dropdownText(item),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() => _selectedCategory = value);
+                              state.didChange(value); // FormField에 변경 알림
+                            }
+                          },
+                          buttonStyleData: ButtonStyleData(
+                            height: 48, // 버튼 높이를 다른 필드와 유사하게 설정
+                            padding: const EdgeInsets.only(left: 0, right: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(kFieldRadius),
+                              border: Border.all(
+                                color: state.hasError ? Colors.red : kBorder,
+                              ),
+                              color: kCardBg,
+                            ),
+                          ),
+                          iconStyleData: const IconStyleData(
+                            icon: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          dropdownStyleData: DropdownStyleData(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(kFieldRadius),
+                              color: kCardBg,
+                            ),
+                            // 드롭다운 메뉴 위치 조정
+                            offset: const Offset(0, -2),
+                          ),
+                          menuItemStyleData: const MenuItemStyleData(
+                            height: 40,
+                            padding: EdgeInsets.symmetric(horizontal: 14),
+                          ),
+                        ),
                       ),
-                    )
-                    .toList(),
-                items: _categories
-                    .map(
-                      (e) => DropdownMenuItem<String>(
-                        value: e,
-                        child: _dropdownText(e),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) =>
-                    setState(() => _selectedCategory = v ?? _selectedCategory),
-                validator: (v) =>
-                    v == null || v.isEmpty ? "카테고리를 선택해 주세요." : null,
+                      // 유효성 검사 에러 메시지 표시
+                      if (state.hasError)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12.0, top: 6.0),
+                          child: Text(
+                            state.errorText!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
 
+              // ▲▲▲▲▲ 여기까지 교체 ▲▲▲▲▲
               const SizedBox(height: 12),
               _sectionLabel("제목"),
               const SizedBox(height: 6),
@@ -664,8 +701,9 @@ class _PostScreenState extends State<PostScreen> {
                                 // 기본 에러 스타일은 그대로 사용(빨간 글씨)
                               ),
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty)
+                            if (v == null || v.trim().isEmpty) {
                               return "모집 인원은 필수 입력란입니다.";
+                            }
                             final n = int.tryParse(v.trim());
                             if (n == null) return "숫자만 입력해 주세요.";
                             if (n <= 0) return "모집 인원은 1명 이상이어야 합니다.";

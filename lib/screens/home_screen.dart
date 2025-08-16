@@ -425,7 +425,6 @@ class _HomeScreenState extends State<HomeScreen> {
     bool showPeople = true,
     String peopleText = "5/10명",
     bool showTags = true,
-    VoidCallback? onArrowTap,
   }) {
     final tagList = tags.trim().isEmpty
         ? <String>[]
