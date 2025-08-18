@@ -1,6 +1,5 @@
 // post_screen.dart
 import "dart:io";
-import "dart:typed_data";
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -771,13 +770,22 @@ class _PostScreenState extends State<PostScreen> {
                       );
                       return;
                     }
+
+                    // 질문 작성 화면으로 이동
                     final questions = await Navigator.push<List<String>>(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const QuestionBuilderScreen(),
                       ),
                     );
-                    // 필요 시 questions 사용
+                    if (questions == null) return;
+
+                    // post + questions 합치기
+                    final post = _buildPostMap();
+                    post["questions"] = questions;
+
+                    if (mounted)
+                      Navigator.pop(context, post); // ← AskForScreen으로 post 반환
                   },
                   style: ElevatedButton.styleFrom(
                     elevation: 10,

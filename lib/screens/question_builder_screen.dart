@@ -135,20 +135,7 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
       return;
     }
 
-    // ✅ 스택 제거 후 MainScreen으로 진입하면서 홈의 "구해요" 탭(인덱스 2)을 초기 선택
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const MainScreen(
-          initialNavIndex: 0, // 홈으로
-          initialHomeTabIndex: 2, // 홈 상단 탭: "구해요"
-        ),
-      ),
-      (route) => false,
-    );
-
-    // 만약 filled 데이터를 이전 화면에 전달해야 한다면,
-    // 상태관리(Riverpod/Bloc)에 저장하거나, 서버/Firebase에 업로드하는 흐름으로 처리하세요.
+    Navigator.pop(context, filled);
   }
 
   @override

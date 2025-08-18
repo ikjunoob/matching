@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart'; // 추가
+// 추가
 import 'notification_screen.dart';
 import 'chat_list_screen.dart';
 import 'dart:ui';
@@ -230,13 +230,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: SafeArea(
                     child: FloatingActionButton(
                       heroTag: "askFab",
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const PostScreen()),
-                        );
+                      onPressed: () async {
+                        // ✅ AskForScreen이 등록해 둔 콜백 호출 → PostScreen 열고 결과를 리스트에 insert
+                        final fn = AskForScreenController.create;
+                        if (fn != null) {
+                          await fn();
+                        } else {
+                          // (옵션) 예외적 상황 대비: fallback
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   const SnackBar(content: Text("화면 초기화 중입니다. 잠시 후 다시 시도해 주세요.")),
+                          // );
+                        }
                       },
-                      backgroundColor: kIndicator,
+                      backgroundColor: kIndicator, // 0xFFAED6F1
                       shape: const CircleBorder(),
                       child: const Icon(
                         Icons.add,
