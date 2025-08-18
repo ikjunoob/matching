@@ -784,8 +784,9 @@ class _PostScreenState extends State<PostScreen> {
                     final post = _buildPostMap();
                     post["questions"] = questions;
 
-                    if (mounted)
+                    if (mounted) {
                       Navigator.pop(context, post); // ← AskForScreen으로 post 반환
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     elevation: 10,

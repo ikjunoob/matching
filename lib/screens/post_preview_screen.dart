@@ -1,21 +1,15 @@
-// post_preview_screen.dart
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-/// ===== Design Tokens =====
-const kAccent = Color(0xFF5BA7FF);
-const kPageBg = Color(0xFFF9FAFB);
-const kCardBg = Color(0xFFFFFFFF);
-const kTextPrimary = Color(0xFF374151); // 살짝 연한 검은색
-const kTextMuted = Color(0xFF6B7280);
-const kIconMuted = Color(0xFF9CA3AF);
-const kTagGrey = Color(0xFF9CA3AF);
-const kDDayBg = Color.fromRGBO(0, 0, 0, 0.55);
+import 'ask_for_common.dart' as theme;
+import 'application_form_screen.dart';
 
 class PostPreviewScreen extends StatefulWidget {
   final Map<String, dynamic> post;
-  const PostPreviewScreen({super.key, required this.post});
+  final VoidCallback? onApply; // 외부에서 지원하기 연결할 수 있게 콜백 허용
+
+  const PostPreviewScreen({super.key, required this.post, this.onApply});
 
   @override
   State<PostPreviewScreen> createState() => _PostPreviewScreenState();
@@ -48,7 +42,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: kDDayBg,
+        color: const Color.fromRGBO(0, 0, 0, 0.55),
         borderRadius: BorderRadius.circular(9999),
       ),
       child: Text(
@@ -94,10 +88,9 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     return must.every((k) => content.contains(k));
   }
 
-  /// 아이콘(Fa) 또는 커스텀 이미지(PNG)를 표시할 수 있는 섹션
   Widget _sectionRow({
     IconData? iconRegular,
-    String? customIcon,
+    String? customIconAsset,
     double customIconSize = 22,
     double faIconSize = 18,
     required String title,
@@ -105,37 +98,22 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
   }) {
     if (items.isEmpty) return const SizedBox.shrink();
 
-    final double iconSlot = customIcon != null
-        ? (customIconSize + 6)
-        : (faIconSize + 6);
-    final text = items.join('\n');
-
-    Widget leadingIcon() {
-      if (customIcon != null) {
-        return Transform.translate(
-          offset: const Offset(-2, 0), // 👈 왼쪽으로 3px 이동
-          child: Image.asset(
-            customIcon,
-            width: customIconSize,
-            height: customIconSize,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-            errorBuilder: (context, error, stack) {
-              debugPrint("❌ Image load failed: $customIcon → $error");
-              return FaIcon(
-                FontAwesomeIcons.infoCircle,
-                size: faIconSize,
-                color: kTextPrimary,
-              );
-            },
-          ),
+    Widget leading() {
+      if (customIconAsset != null) {
+        return Image.asset(
+          customIconAsset,
+          width: customIconSize,
+          height: customIconSize,
+          fit: BoxFit.contain,
         );
       }
-      if (iconRegular == null) {
-        return SizedBox(width: faIconSize, height: faIconSize);
+      if (iconRegular != null) {
+        return FaIcon(iconRegular, size: faIconSize, color: theme.kTextPrimary);
       }
-      return FaIcon(iconRegular, size: faIconSize, color: kTextPrimary);
+      return const SizedBox.shrink();
     }
+
+    final text = items.join('\n');
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -143,19 +121,9 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: iconSlot,
-            child: Padding(
-              padding: EdgeInsets.only(top: customIcon != null ? 2.0 : 4.0),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Transform.translate(
-                  offset: const Offset(0, 0), // ← 왼쪽으로 3px 이동
-                  child: leadingIcon(),
-                ),
-              ),
-            ),
+            width: (customIconAsset != null ? customIconSize : faIconSize) + 6,
+            child: leading(),
           ),
-
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -166,7 +134,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 15,
-                    color: kTextPrimary,
+                    color: theme.kTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -175,7 +143,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                   style: const TextStyle(
                     fontSize: 14.5,
                     height: 1.5,
-                    color: kTextMuted,
+                    color: theme.kTextMuted,
                   ),
                 ),
               ],
@@ -188,7 +156,10 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Uint8List? imageBytes = widget.post['image'] as Uint8List?;
+    final img = widget.post['image'];
+    final Uint8List? imageBytes = img is Uint8List ? img : null;
+    final String? imageUrl = img is String ? img : null;
+
     final deadline = widget.post['deadlineAt'] as DateTime?;
     final headcount = widget.post['headcount']?.toString() ?? '';
     final tags = widget.post['tags'] as List? ?? [];
@@ -205,31 +176,30 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     const double imageHeight = 256;
 
     return Scaffold(
-      backgroundColor: kPageBg,
+      backgroundColor: theme.kPageBg,
       appBar: AppBar(
-        backgroundColor: kCardBg,
+        backgroundColor: Colors.white,
         elevation: 0.5,
-        shadowColor: Colors.black12,
+        iconTheme: const IconThemeData(color: theme.kTextPrimary),
+        centerTitle: true,
         title: Text(
           title,
           style: const TextStyle(
+            color: theme.kTextPrimary,
             fontWeight: FontWeight.w700,
-            color: kTextPrimary,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
-        centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(
               _isLiked ? Icons.favorite : Icons.favorite_border,
-              color: _isLiked ? Colors.red : kTextPrimary,
+              color: _isLiked ? Colors.red : theme.kTextPrimary,
             ),
-            onPressed: () {
-              setState(() {
-                _isLiked = !_isLiked;
-                _likeCount += _isLiked ? 1 : -1;
-              });
-            },
+            onPressed: () => setState(() {
+              _isLiked = !_isLiked;
+              _likeCount += _isLiked ? 1 : -1;
+            }),
           ),
         ],
       ),
@@ -237,7 +207,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
-          // 이미지
+          // 상단 이미지
           SizedBox(
             width: MediaQuery.of(context).size.width,
             height: imageHeight,
@@ -245,11 +215,9 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
               fit: StackFit.expand,
               children: [
                 if (imageBytes != null)
-                  Image.memory(
-                    imageBytes,
-                    fit: BoxFit.cover,
-                    alignment: Alignment.center,
-                  )
+                  Image.memory(imageBytes, fit: BoxFit.cover)
+                else if (imageUrl != null && imageUrl.isNotEmpty)
+                  Image.network(imageUrl, fit: BoxFit.cover)
                 else
                   Container(color: const Color(0xFFF2F4F7)),
                 if (deadline != null)
@@ -268,19 +236,19 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
             ),
           ),
 
-          // 본문 (패딩 적용)
+          // 본문
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 제목
+                // 제목 (본문에도 한번 더 — 디자인 유지용)
                 Text(
                   title,
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: kTextPrimary,
+                    color: theme.kTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -300,7 +268,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                                   child: Text(
                                     "#$t",
                                     style: const TextStyle(
-                                      color: kTagGrey,
+                                      color: theme.kTextMuted,
                                       fontSize: 14,
                                     ),
                                   ),
@@ -314,12 +282,15 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                     const FaIcon(
                       FontAwesomeIcons.eye,
                       size: 16,
-                      color: kIconMuted,
+                      color: Color(0xFF9CA3AF),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       "$_viewCount",
-                      style: const TextStyle(color: kIconMuted, fontSize: 14),
+                      style: const TextStyle(
+                        color: Color(0xFF9CA3AF),
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     const FaIcon(
@@ -330,14 +301,16 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                     const SizedBox(width: 6),
                     Text(
                       "$_likeCount",
-                      style: const TextStyle(color: kIconMuted, fontSize: 14),
+                      style: const TextStyle(
+                        color: Color(0xFF9CA3AF),
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 20),
 
-                // 섹션
                 if (useTemplate) ...[
                   _sectionRow(
                     iconRegular: FontAwesomeIcons.addressCard,
@@ -355,8 +328,8 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                     items: parsed["필요 역량"] ?? const [],
                   ),
                   _sectionRow(
-                    customIcon: "assets/icons/free-icon-info.png",
-                    customIconSize: 20, // ✅ 아이콘 크기 키운 부분
+                    customIconAsset: "assets/icons/free-icon-info.png",
+                    customIconSize: 20,
                     title: "추가 정보",
                     items: parsed["추가 정보"] ?? const [],
                   ),
@@ -366,7 +339,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                     style: const TextStyle(
                       fontSize: 16,
                       height: 1.45,
-                      color: kTextPrimary,
+                      color: theme.kTextPrimary,
                     ),
                   ),
                 ],
@@ -380,13 +353,30 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              // 외부 콜백이 들어오면 우선 사용
+              if (widget.onApply != null) {
+                widget.onApply!.call();
+                return;
+              }
+              // 기본 동작: 지원서로 이동
+              final qs =
+                  (widget.post['questions'] as List?)?.cast<String>() ??
+                  const <String>[];
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      ApplicationFormScreen(post: widget.post, questions: qs),
+                ),
+              );
+            },
             style: ElevatedButton.styleFrom(
               elevation: 0,
-              backgroundColor: kAccent,
+              backgroundColor: theme.kAccent,
               minimumSize: const Size.fromHeight(54),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: const Text(

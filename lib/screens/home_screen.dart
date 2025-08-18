@@ -4,7 +4,6 @@ import 'notification_screen.dart';
 import 'chat_list_screen.dart';
 import 'dart:ui';
 import 'ask_for_screen.dart';
-import 'post_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 /// ===== Design Tokens (캡처 기준 색상) =====

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 // 경로는 프로젝트 구조에 맞게 조정하세요.
 // 예: lib/screens/ 밑에 있다면: import '../main_screen.dart';
-import 'main_screen.dart';
 
 class QuestionBuilderScreen extends StatefulWidget {
   const QuestionBuilderScreen({super.key});
