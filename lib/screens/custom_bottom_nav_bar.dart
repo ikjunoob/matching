@@ -15,7 +15,7 @@ class CustomBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accentColor = const Color(0xFFAED6F1);
-    const navBarHeight = 52.0;
+    const navBarHeight = 56.0;
     const floatingSize = 64.0;
 
     // 중앙 버튼을 더 위로 올림 (양수방향)
@@ -60,7 +60,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     ],
                   ),
                   child: const Center(
-                    child: Icon(Icons.podcasts, color: Colors.black, size: 28),
+                    child: Icon(Icons.podcasts, color: Colors.black, size: 30),
                   ),
                 ),
               ),

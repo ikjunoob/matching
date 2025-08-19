@@ -11,6 +11,8 @@ import 'post_preview_screen.dart';
 import 'question_builder_screen.dart';
 // dropdown_button2 패키지를 import 합니다.
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 
 /// ===== Design Tokens (표 기준) =====
 const kAccent = Color(0xFF5BA7FF); // 포커스/포인트
@@ -402,7 +404,8 @@ class _PostScreenState extends State<PostScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
+            FontAwesomeIcons.arrowLeft, // ✅ FontAwesome 아이콘
+            size: 21,
             color: kTextPrimary,
           ),
           onPressed: () => Navigator.pop(context),

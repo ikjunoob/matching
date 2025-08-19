@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'ask_for_common.dart' as theme;
 import 'application_form_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class PostPreviewScreen extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -32,9 +33,12 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     final now = DateTime.now();
     if (!d.isAfter(now)) return "마감됨";
     final diff = d.difference(now);
-    if (diff.inDays >= 1) return "D-${diff.inDays}";
-    final h = diff.inHours;
-    final m = diff.inMinutes % 60;
+
+    if (diff.inDays >= 1) {
+      return "D - ${diff.inDays}";
+    }
+
+    // ✅ 하루 미만 남았다면 그냥 D-day로 표시
     return "D - day";
   }
 
@@ -187,19 +191,26 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
           style: const TextStyle(
             color: theme.kTextPrimary,
             fontWeight: FontWeight.w700,
+            fontSize: 18,
           ),
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              _isLiked ? Icons.favorite : Icons.favorite_border,
-              color: _isLiked ? Colors.red : theme.kTextPrimary,
+          Padding(
+            padding: const EdgeInsets.only(
+              right: 8.0,
+            ), // ← 오른쪽 여백 줄여서 아이콘을 살짝 왼쪽으로
+            child: IconButton(
+              icon: FaIcon(
+                _isLiked ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
+                color: _isLiked ? Colors.red : theme.kTextPrimary,
+                size: 20,
+              ),
+              onPressed: () => setState(() {
+                _isLiked = !_isLiked;
+                _likeCount += _isLiked ? 1 : -1;
+              }),
             ),
-            onPressed: () => setState(() {
-              _isLiked = !_isLiked;
-              _likeCount += _isLiked ? 1 : -1;
-            }),
           ),
         ],
       ),
@@ -255,55 +266,78 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
 
                 // 태그 + 메타
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // ⬇ 태그들을 감싸는 하나의 라운드 박스
                     Flexible(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        child: Row(
-                          children: (tags.isNotEmpty ? tags : const <String>[])
-                              .map(
-                                (t) => Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: Text(
-                                    "#$t",
-                                    style: const TextStyle(
-                                      color: theme.kTextMuted,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(255, 240, 240, 240),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            children:
+                                (tags.isNotEmpty ? tags : const <String>[])
+                                    .map(
+                                      (t) => Padding(
+                                        padding: const EdgeInsets.only(
+                                          right: 0,
+                                        ),
+                                        child: Text(
+                                          "#$t",
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF1F2937),
+                                            height: 1.0,
+                                            fontWeight: FontWeight.w500, // ← 추가
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                          ),
                         ),
                       ),
                     ),
+
                     const SizedBox(width: 8),
+
+                    // 조회수
                     const FaIcon(
-                      FontAwesomeIcons.eye,
-                      size: 16,
-                      color: Color(0xFF9CA3AF),
+                      FontAwesomeIcons.solidEye,
+                      size: 14,
+                      color: Color.fromARGB(255, 75, 75, 75),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       "$_viewCount",
                       style: const TextStyle(
-                        color: Color(0xFF9CA3AF),
-                        fontSize: 14,
+                        fontSize: 12,
+                        color: Color(0xFF1F2937),
                       ),
                     ),
+
                     const SizedBox(width: 14),
+
+                    // 좋아요
                     const FaIcon(
                       FontAwesomeIcons.solidHeart,
-                      size: 16,
+                      size: 14,
                       color: Colors.red,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       "$_likeCount",
                       style: const TextStyle(
-                        color: Color(0xFF9CA3AF),
-                        fontSize: 14,
+                        fontSize: 12,
+                        color: Color(0xFF1F2937),
                       ),
                     ),
                   ],
@@ -379,12 +413,12 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
+            child: Text(
               "지원하기",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+              style: GoogleFonts.notoSansKr(
+                fontSize: 20,
+                fontWeight: FontWeight.w600, // 진짜 Black 웨이트 다운로드됨
+                color: const Color.fromARGB(255, 37, 37, 37),
               ),
             ),
           ),

@@ -17,6 +17,7 @@ dependencies:
   file_picker: ^10.3.1
   font_awesome_flutter: ^10.7.0
   dropdown_button2: ^2.3.9
+  google_fonts: ^6.0.0
 
 dev_dependencies:
   flutter_test:

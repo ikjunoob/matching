@@ -216,7 +216,13 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Builder(
         builder: (context) {
           if (_selectedTabIndex == 0) {
-            return _buildRecommendTab();
+            // ✅ 추천 탭: maxWidth 768px 적용
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 768),
+                child: _buildRecommendTab(),
+              ),
+            );
           } else if (_selectedTabIndex == 1) {
             return const Center(child: Text("모임 탭 더미"));
           } else if (_selectedTabIndex == 2) {
@@ -234,19 +240,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         final fn = AskForScreenController.create;
                         if (fn != null) {
                           await fn();
-                        } else {
-                          // (옵션) 예외적 상황 대비: fallback
-                          // ScaffoldMessenger.of(context).showSnackBar(
-                          //   const SnackBar(content: Text("화면 초기화 중입니다. 잠시 후 다시 시도해 주세요.")),
-                          // );
                         }
                       },
-                      backgroundColor: kIndicator, // 0xFFAED6F1
+                      elevation: 4,
+                      backgroundColor: const Color.fromARGB(
+                        255,
+                        255,
+                        255,
+                        255,
+                      ), // 0xFFAED6F1
                       shape: const CircleBorder(),
                       child: const Icon(
                         Icons.add,
-                        size: 30,
-                        color: Colors.white,
+                        size: 35,
+                        color: Color.fromARGB(255, 89, 189, 247),
                       ),
                     ),
                   ),
@@ -271,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
           SectionTitle(title: "✨ 이런 모임은 어때요?", onMoreTap: () => _onTabTap(1)),
           const SizedBox(height: 13),
           SizedBox(
-            height: 160,
+            height: 192,
             child: ListView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -323,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
           SectionTitle(title: "🎯 취향저격! 추천 장소", onMoreTap: () => _onTabTap(3)),
           const SizedBox(height: 13),
           SizedBox(
-            height: 130,
+            height: 128,
             child: ListView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -430,10 +437,17 @@ class _HomeScreenState extends State<HomeScreen> {
     bool showPeople = true,
     String peopleText = "5/10명",
     bool showTags = true,
+    double? titleFontSize, // ✅ nullable: 전달 없으면 타입별 기본값
   }) {
+    const kMeetingTitleSize = 19.0;
+    const kPlaceTitleSize = 16.0;
+
     final tagList = tags.trim().isEmpty
         ? <String>[]
         : tags.trim().split(RegExp(r'\s+'));
+
+    final double resolvedTitleSize =
+        titleFontSize ?? (showPeople ? kMeetingTitleSize : kPlaceTitleSize);
 
     return Container(
       width: width,
@@ -442,85 +456,134 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
         image: DecorationImage(image: NetworkImage(image), fit: BoxFit.cover),
       ),
-      clipBehavior: Clip.antiAlias, // 그라데이션이 둥근 모서리를 벗어나지 않도록
+      clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
+          // 하단 → 상단 그라데이션
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [Colors.black.withOpacity(0.65), Colors.transparent],
-                  stops: const [0.0, 0.5], // 그라데이션 범위 조절
+                  colors: [Colors.black.withOpacity(0.60), Colors.transparent],
+                  stops: const [0.0, 0.5],
                 ),
               ),
             ),
           ),
+
+          // 👥 모임 카드 → 좌상단 (인원수 + 좋아요)
           if (showPeople)
             Positioned(
               top: 10,
               left: 10,
+              child: Row(
+                children: [
+                  // 인원수 박스
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          FontAwesomeIcons.users,
+                          size: 11,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          peopleText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  // 좋아요 박스
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.favorite, size: 13, color: kHeartRed),
+                        const SizedBox(width: 3),
+                        Text(
+                          "$heartCount",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // 📍 장소 카드 → 우상단 (좋아요만)
+          if (!showPeople)
+            Positioned(
+              top: 10,
+              right: 10,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.45),
+                  color: Colors.black.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(7),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.group, size: 13, color: Colors.white),
+                    const Icon(Icons.favorite, size: 13, color: kHeartRed),
                     const SizedBox(width: 3),
                     Text(
-                      peopleText,
+                      "$heartCount",
                       style: const TextStyle(color: Colors.white, fontSize: 11),
                     ),
                   ],
                 ),
               ),
             ),
-          Positioned(
-            top: 10,
-            right: 10,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.45),
-                borderRadius: BorderRadius.circular(7),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.favorite, size: 13, color: kHeartRed),
-                  const SizedBox(width: 3),
-                  Text(
-                    "$heartCount",
-                    style: const TextStyle(color: Colors.white, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-          ),
+
+          // 제목/태그 (카드 하단)
           Positioned(
             left: 12,
             bottom: 10,
-            right: 12, // 오른쪽 여백 추가
+            right: 12,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                    fontSize: resolvedTitleSize,
+                    shadows: const [
+                      Shadow(color: Colors.black54, blurRadius: 4),
+                    ],
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (showTags && tagList.isNotEmpty) ...[
                   const SizedBox(height: 5),
-                  // 태그가 길어도 한 줄에만 표시되도록 SingleChildScrollView 사용
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -551,6 +614,25 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+
+          // ➡️ 모임 카드 전용 화살표 버튼 (오른쪽 하단)
+          if (showPeople)
+            Positioned(
+              bottom: 10,
+              right: 10,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -578,7 +660,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
+              border: Border.all(color: Colors.white, width: 4),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.2),
@@ -661,7 +743,11 @@ class SectionTitle extends StatelessWidget {
             onTap: onMoreTap,
             child: const Text(
               "더보기 >",
-              style: TextStyle(color: kTextMuted, fontSize: 13),
+              style: TextStyle(
+                color: kTextMuted,
+                fontSize: 13,
+                fontWeight: FontWeight.w600, // ← 굵기 추가
+              ),
             ),
           ),
       ],

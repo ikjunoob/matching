@@ -43,6 +43,8 @@ class _AskForScreenState extends State<AskForScreen> {
       "createdAt": DateTime.now().subtract(const Duration(hours: 4)),
       "deadlineAt": DateTime.now().add(const Duration(days: 2)),
       "urgentOverlay": false,
+      "headcount": 3, // ✅ 모집 인원 추가
+      "content": "운동 메이트 구해요를 위한 더미 데이터 내용을 넣어봅시다",
       "questions": [
         "간단한 자기소개를 부탁드려요.",
         "운동 루틴과 시간대는 어떻게 되나요?",
@@ -60,8 +62,10 @@ class _AskForScreenState extends State<AskForScreen> {
       "category": "물품대여",
       "isLiked": false,
       "createdAt": DateTime.now().subtract(const Duration(days: 1, hours: 3)),
-      "deadlineAt": null,
+      // ✅ 여기! null 대신 마감 날짜를 넣어줘 (예: 3일 뒤 마감)
+      "deadlineAt": DateTime.now().add(const Duration(days: 3)),
       "urgentOverlay": false,
+      "headcount": 3, // ✅ 모집 인원 추가
       "questions": ["수령 방법은 어떻게 원하시나요?", "책 상태는 어느 정도인가요?", "네고 가능 여부를 알려주세요."],
     },
     {
@@ -77,6 +81,7 @@ class _AskForScreenState extends State<AskForScreen> {
       "createdAt": DateTime.now().subtract(const Duration(hours: 10)),
       "deadlineAt": DateTime.now().add(const Duration(hours: 6)),
       "urgentOverlay": true,
+      "headcount": 3, // ✅ 모집 인원 추가
       "questions": [
         "선호하는 음식/알레르기를 알려주세요.",
         "예산 범위를 알려주세요.",
@@ -305,11 +310,11 @@ class _AskForScreenState extends State<AskForScreen> {
             radius: chipRadius,
             hPad: chipHPad,
             vPad: chipVPad,
-            fontSize: fontSize,
+            fontSize: fontSize, // ✅ 카테고리 박스 글자 크기
             iconSize: iconSize,
-            menuItemHeight: 40.0 * scale,
-            menuFontSize: 14.0 * scale,
-            maxMenuWidth: 130.0 * scale,
+            menuItemHeight: 40.0 * scale, // ✅ 드롭다운 메뉴 항목 높이
+            menuFontSize: 15.0 * scale, // ✅ 드롭다운 안 텍스트 크기
+            maxMenuWidth: 160.0 * scale, // ✅ 드롭다운 메뉴 전체 박스 너비
           ),
         ],
       ),
@@ -368,9 +373,7 @@ class _CategoryChipMenu extends StatelessWidget {
           position: position,
           color: theme.kWhite,
           elevation: 10,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           constraints: BoxConstraints(minWidth: 0, maxWidth: maxMenuWidth),
           items: items.map((e) {
             final isSel = e == label;
@@ -382,7 +385,7 @@ class _CategoryChipMenu extends StatelessWidget {
                 text: e,
                 isSelected: isSel,
                 accent: accent,
-                fontSize: fontSize,
+                fontSize: menuFontSize,
               ),
             );
           }).toList(),
@@ -592,10 +595,10 @@ class AskForPostCard extends StatelessWidget {
                     "마감임박",
                     style: TextStyle(
                       color: theme.kWhite,
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                       height: 1.0,
-                      letterSpacing: 0.2,
+                      letterSpacing: 2.2,
                     ),
                   ),
                 ),
@@ -705,12 +708,12 @@ class AskForPostCard extends StatelessWidget {
                                   )
                                   .toList(),
                             ),
-                            const SizedBox(height: 38),
+                            const SizedBox(height: 34),
                             // 메타
                             Row(
                               children: [
                                 const FaIcon(
-                                  FontAwesomeIcons.commentDots,
+                                  FontAwesomeIcons.solidCommentDots,
                                   size: 13,
                                   color: theme.kTextMuted,
                                 ),
@@ -724,7 +727,7 @@ class AskForPostCard extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 10),
                                 const FaIcon(
-                                  FontAwesomeIcons.eye,
+                                  FontAwesomeIcons.solidEye,
                                   size: 13,
                                   color: theme.kTextMuted,
                                 ),
@@ -784,7 +787,7 @@ class _CategoryChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: theme.kDivider),
       ),
       child: Text(
