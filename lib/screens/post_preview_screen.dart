@@ -35,7 +35,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
     if (diff.inDays >= 1) return "D-${diff.inDays}";
     final h = diff.inHours;
     final m = diff.inMinutes % 60;
-    return "마감까지 $h시간 $m분";
+    return "D - day";
   }
 
   Widget _pill(String text) {

@@ -233,12 +233,12 @@ class _AskForScreenState extends State<AskForScreen> {
   }
 
   Widget _buildSortAndCategoryBar() {
-    const scale = 0.8;
+    const scale = 1.0; // ✅ 전체 스케일
     final chipRadius = 14.0 * scale;
     final chipHPad = 10.0 * scale;
     final chipVPad = 6.0 * scale;
-    final fontSize = 12.0 * scale;
-    final iconSize = 14.0 * scale;
+    final fontSize = 12.0 * scale; // ✅ 칩 텍스트 크기
+    final iconSize = 14.0 * scale; // ✅ 칩 오른쪽 아이콘 크기
 
     return Container(
       width: double.infinity,
@@ -518,7 +518,7 @@ class _ChipButton extends StatelessWidget {
                       fontSize: fontSize,
                       height: 1.1,
                       color: theme.kTextPrimary,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w300,
                     ),
                   ),
                   SizedBox(width: 4 * (fontSize / 12.0)),
@@ -698,7 +698,7 @@ class AskForPostCard extends StatelessWidget {
                                     (tag) => Text(
                                       "#$tag",
                                       style: const TextStyle(
-                                        fontSize: 10,
+                                        fontSize: 13,
                                         color: theme.kTextMuted,
                                       ),
                                     ),
@@ -790,7 +790,7 @@ class _CategoryChip extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(
-          fontSize: 8,
+          fontSize: 10,
           color: theme.kTextPrimary,
           fontWeight: FontWeight.w600,
         ),
