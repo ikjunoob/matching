@@ -26,23 +26,29 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
   ];
 
   final List<TextEditingController> _controllers = [];
+  final List<bool> _hintOn = []; // ▷ 각 필드의 hint 표시 여부
   final _formKey = GlobalKey<FormState>();
 
-  TextEditingController _newController([String? initial]) {
+  TextEditingController _newController({
+    String? initial,
+    required bool showHint,
+  }) {
     final c = TextEditingController(text: initial ?? "");
-    // 텍스트 변할 때 우측 'x' 표시 갱신용
     c.addListener(() {
-      if (mounted) setState(() {});
+      if (mounted) setState(() {}); // x 아이콘 갱신
     });
+    _hintOn.add(showHint);
     return c;
   }
 
   @override
   void initState() {
     super.initState();
-    // 처음 3개는 플레이스홀더를 "실제 텍스트"로 채워둠
+    // 초기 3개는 "실제 텍스트 값"으로 채워둠. (힌트는 표시할 필요 없음)
     for (int i = 0; i < _minCount; i++) {
-      _controllers.add(_newController(_placeholders[i]));
+      _controllers.add(
+        _newController(initial: _placeholders[i], showHint: false),
+      );
     }
   }
 
@@ -58,7 +64,10 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
     if (_controllers.length >= _maxCount) return;
     final idx = _controllers.length;
     final seed = idx < _placeholders.length ? _placeholders[idx] : "";
-    setState(() => _controllers.add(_newController(seed)));
+    // 새로 추가된 칸은 플레이스홀더를 "실제 텍스트"로 미리 넣고 싶으면 showHint:false + initial:seed
+    // 빈 칸으로 추가하고 싶으면: initial:null, showHint:true
+    _controllers.add(_newController(initial: seed, showHint: false));
+    setState(() {});
   }
 
   void _removeQuestion() {
@@ -66,6 +75,7 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
     setState(() {
       final last = _controllers.removeLast();
       last.dispose();
+      _hintOn.removeLast();
     });
   }
 
@@ -74,12 +84,15 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
 
   InputDecoration _whiteFieldDecoration({
     required TextEditingController controller,
+    required bool showHint,
     String? hint,
   }) {
     return InputDecoration(
-      hintText: hint ?? "",
+      hintText: showHint
+          ? (hint ?? "")
+          : null, // ▷ x 누르면 showHint=false 로 바뀌어 빈칸 유지
       hintStyle: const TextStyle(
-        color: Color(0xFF1F2937),
+        color: Color(0xFF111827),
         fontSize: 14,
         height: 1.35,
       ),
@@ -98,14 +111,25 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      // 우측 'x' 아이콘 (텍스트 있을 때만 보이게)
+
+      // ▷ 'x' : 크기 줄이고, 탭 영역은 유지
       suffixIcon: controller.text.isNotEmpty
           ? IconButton(
+              icon: const Icon(Icons.close, size: 18),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              onPressed: () {
+                controller.clear(); // 텍스트 삭제
+                final i = _controllers.indexOf(controller);
+                if (i != -1) _hintOn[i] = false; // ▷ 힌트도 비활성화 → 완전 빈 박스
+                setState(() {});
+              },
               tooltip: "지우기",
-              icon: const Icon(Icons.close),
-              onPressed: () => controller.clear(),
             )
           : null,
+
+      // (선택) suffixIcon 위치 미세조정이 필요하면 suffixIconConstraints로 조절 가능
+      // suffixIconConstraints: const BoxConstraints.tightFor(height: 40, width: 40),
     );
   }
 
@@ -117,7 +141,7 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
         style: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          color: Colors.black,
+          color: Color(0xFF1F2937),
         ),
       ),
     );
@@ -141,11 +165,15 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
         ),
         child: Icon(
           icon,
-          size: 20,
+          size: 18, // 살짝 더 작게
           color: enabled ? Colors.black54 : Colors.black26,
         ),
       ),
     );
+
+    // ▼ 만약 FontAwesome의 plusCircle / minusCircle을 쓰고 싶다면
+    //    위 컨테이너의 원·테두리를 제거해야 "겹침"이 안 보임:
+    // return IconButton(icon: FaIcon(FontAwesomeIcons.plusCircle), onPressed: onTap);
   }
 
   void _submit() {
@@ -176,7 +204,7 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
         title: const Text(
           "지원서 질문 생성",
           style: TextStyle(
-            color: Colors.black,
+            color: Color(0xFF1F2937),
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
@@ -197,12 +225,11 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
                   padding: EdgeInsets.only(left: 6.0, bottom: 10),
                   child: Text(
                     "지원자에게 궁금한 질문을 폼으로 만들어보세요. 최소 3개, 최대 10개까지 추가할 수 있습니다.",
-                    style: TextStyle(fontSize: 12.5, color: Colors.black54),
+                    style: TextStyle(fontSize: 12.5, color: Color(0xFF1F2937)),
                   ),
                 ),
                 ...List.generate(_controllers.length, (index) {
                   final number = index + 1;
-                  // 플레이스홀더는 "입력값이 비어있을 때만" 안내용으로 사용
                   final hint = (index < _placeholders.length)
                       ? _placeholders[index]
                       : null;
@@ -220,10 +247,11 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
                           style: const TextStyle(
                             fontSize: 14,
                             height: 1.35,
-                            color: Colors.black87,
+                            color: Color(0xFF1F2937),
                           ),
                           decoration: _whiteFieldDecoration(
                             controller: _controllers[index],
+                            showHint: _hintOn[index],
                             hint: hint,
                           ),
                         ),
@@ -234,16 +262,14 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 if (_controllers.length == _minCount)
-                                  // ➕ FontAwesome로 교체
                                   _circleIconButton(
-                                    icon: FontAwesomeIcons.plusCircle,
+                                    icon: FontAwesomeIcons.plus, // ← 원 없는 아이콘
                                     onTap: _addQuestion,
                                     enabled: _canAdd,
                                   )
                                 else if (_controllers.length == _maxCount)
-                                  // ➖ FontAwesome로 교체
                                   _circleIconButton(
-                                    icon: FontAwesomeIcons.minusCircle,
+                                    icon: FontAwesomeIcons.minus, // ← 원 없는 아이콘
                                     onTap: _removeQuestion,
                                     enabled: _canRemove,
                                   )
@@ -251,13 +277,13 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
                                   Row(
                                     children: [
                                       _circleIconButton(
-                                        icon: FontAwesomeIcons.plusCircle,
+                                        icon: FontAwesomeIcons.plus,
                                         onTap: _addQuestion,
                                         enabled: _canAdd,
                                       ),
                                       const SizedBox(width: 12),
                                       _circleIconButton(
-                                        icon: FontAwesomeIcons.minusCircle,
+                                        icon: FontAwesomeIcons.minus,
                                         onTap: _removeQuestion,
                                         enabled: _canRemove,
                                       ),
@@ -276,7 +302,7 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
         ),
       ),
       bottomSheet: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16 + 8),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: const BoxDecoration(
           color: Colors.white,
           border: Border(top: BorderSide(color: Color(0xFFE6E8EB), width: 1)),
@@ -284,7 +310,7 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
             BoxShadow(
               color: Color(0x0F000000),
               blurRadius: 8,
-              offset: Offset(0, -1),
+              offset: Offset(0, -3),
             ),
           ],
         ),
