@@ -1,5 +1,6 @@
 // post_screen.dart
 import "dart:io";
+import "dart:typed_data";
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -9,15 +10,18 @@ import "package:permission_handler/permission_handler.dart";
 import "package:intl/intl.dart";
 import 'post_preview_screen.dart';
 import 'question_builder_screen.dart';
-// dropdown_button2 패키지를 import 합니다.
+
+// ▼ 추가 패키지
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import 'package:dotted_border/dotted_border.dart';
+import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 
 /// ===== Design Tokens (표 기준) =====
 const kAccent = Color(0xFF5BA7FF); // 포커스/포인트
 const kBorder = Color(0xFFE5E7EB); // 테두리
-const kPageBg = Color(0xFFF9FAFB); // 메인 배경
+const kBorderStrong = Color(0xFFCBD5E1); // AppBar 하단 진한 보더
+const kPageBg = Color(0xFFFFFFFF); // 메인 배경 - 흰색으로 변경
 const kCardBg = Color(0xFFFFFFFF); // 카드/서브 배경
 const kTextPrimary = Color(0xFF111827); // 본문 텍스트
 const kTextMuted = Color(0xFF6B7280); // 보조 텍스트
@@ -281,20 +285,100 @@ class _PostScreenState extends State<PostScreen> {
     }
   }
 
+  // ---- 예쁜 달력: calendar_date_picker2 + 바텀시트 ----
   Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
+    DateTime temp = _deadline ?? DateTime.now();
+    final result = await showModalBottomSheet<DateTime>(
       context: context,
-      initialDate: _deadline ?? now,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365 * 3)),
-      helpText: "마감일 선택",
+      isScrollControlled: true,
+      backgroundColor: kCardBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            top: 12,
+            left: 12,
+            right: 12,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              CalendarDatePicker2(
+                config: CalendarDatePicker2Config(
+                  calendarType: CalendarDatePicker2Type.single,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
+                  selectedDayHighlightColor: kAccent,
+                  weekdayLabelTextStyle: const TextStyle(
+                    color: kTextMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  controlsTextStyle: const TextStyle(
+                    color: kTextPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  dayTextStyle: const TextStyle(color: kTextPrimary),
+                ),
+                value: [temp],
+                onValueChanged: (list) {
+                  if (list.isNotEmpty && list.first != null) {
+                    temp = DateTime(
+                      list.first!.year,
+                      list.first!.month,
+                      list.first!.day,
+                      23,
+                      59,
+                    );
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: kTextPrimary,
+                        side: const BorderSide(color: kBorder),
+                      ),
+                      child: const Text("취소"),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, temp),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kAccent,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text("선택"),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
     );
-    if (picked != null) {
-      setState(
-        () =>
-            _deadline = DateTime(picked.year, picked.month, picked.day, 23, 59),
-      );
+
+    if (result != null) {
+      setState(() => _deadline = result);
     }
   }
 
@@ -357,7 +441,7 @@ class _PostScreenState extends State<PostScreen> {
   Widget _inlineError(GlobalKey<FormFieldState<String>> key) {
     final error = key.currentState?.errorText;
     return SizedBox(
-      height: 18, // 고정 높이(두 필드 모두 동일하게 확보)
+      height: 18,
       child: AnimatedOpacity(
         opacity: error == null ? 0 : 1,
         duration: const Duration(milliseconds: 150),
@@ -386,25 +470,17 @@ class _PostScreenState extends State<PostScreen> {
     );
   }
 
-  Text _dropdownText(String s) => Text(
-    s,
-    // strutStyle을 제거하거나 height 속성을 제거해야
-    // dropdown_button2가 정상적으로 동작합니다.
-    style: const TextStyle(
-      fontSize: 15,
-      color: kTextPrimary,
-      // height: 1.35, // 이 속성이 있으면 메뉴 높이 계산에 오류가 생길 수 있음
-    ),
-  );
+  Text _dropdownText(String s) =>
+      Text(s, style: const TextStyle(fontSize: 15, color: kTextPrimary));
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kPageBg,
+      backgroundColor: kPageBg, // 1) 흰 배경
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(
-            FontAwesomeIcons.arrowLeft, // ✅ FontAwesome 아이콘
+            FontAwesomeIcons.arrowLeft,
             size: 21,
             color: kTextPrimary,
           ),
@@ -420,8 +496,12 @@ class _PostScreenState extends State<PostScreen> {
         ),
         centerTitle: true,
         backgroundColor: kCardBg,
-        elevation: 0.5,
-        shadowColor: Colors.black12,
+        elevation: 0, // 기본 그림자 제거
+        // 2) 상단 바 underline(구분선) 더 진하게
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, thickness: 1, color: kBorderStrong),
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -448,56 +528,62 @@ class _PostScreenState extends State<PostScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 대표 이미지
+              // 대표 이미지 - 3) 점선 테두리 + 4) 비어있는 FontAwesome 카메라 아이콘
               GestureDetector(
                 onTap: _pickImage,
-                child: Container(
-                  height: 192,
-                  decoration: BoxDecoration(
-                    color: kCardBg,
-                    borderRadius: BorderRadius.circular(kFieldRadius),
-                    border: Border.all(color: kBorder, width: 1),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      if (_imageBytes != null)
-                        Image.memory(_imageBytes!, fit: BoxFit.cover)
-                      else if (_imageFile != null)
-                        Image.file(_imageFile!, fit: BoxFit.cover)
-                      else
-                        Container(
-                          color: const Color(0xFFF2F4F7),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(
-                                Icons.camera_alt_rounded,
-                                size: 36,
-                                color: kTextMuted,
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "클릭하여 이미지 추가",
-                                style: TextStyle(color: kTextMuted),
-                              ),
-                            ],
+                child: DottedBorder(
+                  dashPattern: const [6, 4],
+                  color: kBorderStrong,
+                  strokeWidth: 1.2,
+                  borderType: BorderType.RRect,
+                  radius: const Radius.circular(kFieldRadius),
+                  child: Container(
+                    height: 192,
+                    decoration: BoxDecoration(
+                      color: kCardBg,
+                      borderRadius: BorderRadius.circular(kFieldRadius),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (_imageBytes != null)
+                          Image.memory(_imageBytes!, fit: BoxFit.cover)
+                        else if (_imageFile != null)
+                          Image.file(_imageFile!, fit: BoxFit.cover)
+                        else
+                          Container(
+                            color: const Color(0xFFF8FAFC),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                FaIcon(
+                                  Icons.camera_alt_outlined, // 비어있는 카메라
+                                  size: 40,
+                                  color: kTextMuted,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "클릭하여 이미지 추가",
+                                  style: TextStyle(color: kTextMuted),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      if (_deadline != null)
-                        Positioned(
-                          left: 8,
-                          bottom: 8,
-                          child: _pill(_formatRemain(_deadline!)),
-                        ),
-                      if (_headcountCtrl.text.trim().isNotEmpty)
-                        Positioned(
-                          right: 8,
-                          bottom: 8,
-                          child: _pill("${_headcountCtrl.text.trim()}명 모집"),
-                        ),
-                    ],
+                        if (_deadline != null)
+                          Positioned(
+                            left: 8,
+                            bottom: 8,
+                            child: _pill(_formatRemain(_deadline!)),
+                          ),
+                        if (_headcountCtrl.text.trim().isNotEmpty)
+                          Positioned(
+                            right: 8,
+                            bottom: 8,
+                            child: _pill("${_headcountCtrl.text.trim()}명 모집"),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -506,7 +592,6 @@ class _PostScreenState extends State<PostScreen> {
               _sectionLabel("카테고리"),
               const SizedBox(height: 6),
 
-              // ▼▼▼▼▼ 기존 DropdownButtonFormField를 아래 코드로 교체 ▼▼▼▼▼
               FormField<String>(
                 initialValue: _selectedCategory,
                 validator: (value) {
@@ -534,11 +619,11 @@ class _PostScreenState extends State<PostScreen> {
                           onChanged: (value) {
                             if (value != null) {
                               setState(() => _selectedCategory = value);
-                              state.didChange(value); // FormField에 변경 알림
+                              state.didChange(value);
                             }
                           },
                           buttonStyleData: ButtonStyleData(
-                            height: 48, // 버튼 높이를 다른 필드와 유사하게 설정
+                            height: 48,
                             padding: const EdgeInsets.only(left: 0, right: 12),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(kFieldRadius),
@@ -559,7 +644,6 @@ class _PostScreenState extends State<PostScreen> {
                               borderRadius: BorderRadius.circular(kFieldRadius),
                               color: kCardBg,
                             ),
-                            // 드롭다운 메뉴 위치 조정
                             offset: const Offset(0, -2),
                           ),
                           menuItemStyleData: const MenuItemStyleData(
@@ -568,16 +652,12 @@ class _PostScreenState extends State<PostScreen> {
                           ),
                         ),
                       ),
-                      // 유효성 검사 에러 메시지 표시
                       if (state.hasError)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 12.0, top: 6.0),
+                        const Padding(
+                          padding: EdgeInsets.only(left: 12.0, top: 6.0),
                           child: Text(
-                            state.errorText!,
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 12,
-                            ),
+                            "카테고리를 선택해 주세요.",
+                            style: TextStyle(color: Colors.red, fontSize: 12),
                           ),
                         ),
                     ],
@@ -585,7 +665,6 @@ class _PostScreenState extends State<PostScreen> {
                 },
               ),
 
-              // ▲▲▲▲▲ 여기까지 교체 ▲▲▲▲▲
               const SizedBox(height: 12),
               _sectionLabel("제목"),
               const SizedBox(height: 6),
@@ -604,16 +683,17 @@ class _PostScreenState extends State<PostScreen> {
                 children: [
                   _sectionLabel("내용"),
                   const Spacer(),
+                  // 5) 더 연한 배경의 템플릿 토글 버튼
                   Container(
                     decoration: BoxDecoration(
                       color: _templateInserted
-                          ? kAccent.withOpacity(0.14)
-                          : const Color(0xFFEFF6FF),
+                          ? kAccent.withOpacity(0.12)
+                          : const Color.fromARGB(255, 244, 244, 244), // 더 연함 // 배경색상
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: _templateInserted
                             ? kAccent
-                            : const Color(0xFFD9E6FF),
+                            : const Color.fromARGB(255, 250, 250, 250), // 보더 색상
                         width: 1,
                       ),
                     ),
@@ -625,13 +705,13 @@ class _PostScreenState extends State<PostScreen> {
                           vertical: 4,
                         ),
                         minimumSize: Size.zero,
-                        foregroundColor: kTextPrimary,
+                        foregroundColor: const Color.fromARGB(255, 122, 129, 144), // 텍스트 색상
                       ),
                       child: Text(
                         _templateInserted ? "질문 템플릿 취소" : "질문 템플릿 추가",
                         style: const TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -647,7 +727,7 @@ class _PostScreenState extends State<PostScreen> {
                   color: kTextPrimary,
                   height: 1.4,
                 ),
-                decoration: _whiteFieldDecoration(hint: "상세 내용을 작성해주세요")
+                decoration: _whiteFieldDecoration(hint: "구하는 목적, 필요한 내용, 기간 등을 상세하게 적어주세요.")
                     .copyWith(
                       fillColor: Colors.white,
                       contentPadding: const EdgeInsets.fromLTRB(
@@ -674,7 +754,7 @@ class _PostScreenState extends State<PostScreen> {
                   fontSize: kFieldFont,
                   color: kTextPrimary,
                 ),
-                decoration: _whiteFieldDecoration(hint: "#태그 입력"),
+                decoration: _whiteFieldDecoration(hint: "#태그 입력 후 스페이스바"),
                 validator: _tagsValidator,
               ),
 
@@ -689,6 +769,7 @@ class _PostScreenState extends State<PostScreen> {
                         _sectionLabel("모집 인원"),
                         const SizedBox(height: 6),
                         TextFormField(
+                          key: _headcountFieldKey,
                           controller: _headcountCtrl,
                           keyboardType: TextInputType.number,
                           style: const TextStyle(
@@ -697,21 +778,10 @@ class _PostScreenState extends State<PostScreen> {
                           ),
                           decoration: _whiteFieldDecoration(hint: "예: 5")
                               .copyWith(
-                                // 레이아웃 흔들림 방지용 빈 helper (항상 자리만 차지)
                                 helperText: " ",
                                 helperStyle: const TextStyle(fontSize: 12),
-                                // 기본 에러 스타일은 그대로 사용(빨간 글씨)
                               ),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return "모집 인원은 필수 입력란입니다.";
-                            }
-                            final n = int.tryParse(v.trim());
-                            if (n == null) return "숫자만 입력해 주세요.";
-                            if (n <= 0) return "모집 인원은 1명 이상이어야 합니다.";
-                            if (n > 9999) return "값이 너무 큽니다.";
-                            return null;
-                          },
+                          validator: _headcountValidator,
                         ),
                       ],
                     ),
@@ -726,6 +796,7 @@ class _PostScreenState extends State<PostScreen> {
                         _sectionLabel("마감일"),
                         const SizedBox(height: 6),
                         TextFormField(
+                          key: _deadlineFieldKey,
                           readOnly: true,
                           controller: TextEditingController(
                             text: _deadline == null
@@ -734,7 +805,7 @@ class _PostScreenState extends State<PostScreen> {
                                     "yyyy. MM. dd.",
                                   ).format(_deadline!),
                           ),
-                          onTap: _pickDate,
+                          onTap: _pickDate, // 6) 예쁜 달력 호출
                           style: const TextStyle(
                             fontSize: kFieldFont,
                             color: kTextPrimary,
@@ -743,13 +814,13 @@ class _PostScreenState extends State<PostScreen> {
                               .copyWith(
                                 suffixIcon: IconButton(
                                   tooltip: "날짜 선택",
-                                  icon: const Icon(
-                                    Icons.calendar_month_rounded,
+                                  icon: const FaIcon(
+                                    FontAwesomeIcons.calendarDays,
                                     color: kTextPrimary,
+                                    size: 18,
                                   ),
                                   onPressed: _pickDate,
                                 ),
-                                // 레이아웃 흔들림 방지용 빈 helper (항상 자리만 차지)
                                 helperText: " ",
                                 helperStyle: const TextStyle(fontSize: 12),
                               ),
@@ -788,7 +859,7 @@ class _PostScreenState extends State<PostScreen> {
                     post["questions"] = questions;
 
                     if (mounted) {
-                      Navigator.pop(context, post); // ← AskForScreen으로 post 반환
+                      Navigator.pop(context, post);
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -820,10 +891,10 @@ class _PostScreenState extends State<PostScreen> {
     final now = DateTime.now();
     if (!d.isAfter(now)) return "마감됨";
     final diff = d.difference(now);
-    if (diff.inDays >= 1) return "D-${diff.inDays}";
+    if (diff.inDays >= 1) return "D - ${diff.inDays}";
     final h = diff.inHours;
     final m = diff.inMinutes % 60;
-    return "마감까지 $h시간 $m분";
+    return "D - day";
   }
 
   Widget _pill(String text) {

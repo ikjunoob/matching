@@ -18,6 +18,8 @@ dependencies:
   font_awesome_flutter: ^10.7.0
   dropdown_button2: ^2.3.9
   google_fonts: ^6.0.0
+  dotted_border: ^2.1.0
+  calendar_date_picker2: ^0.5.5
 
 dev_dependencies:
   flutter_test:
