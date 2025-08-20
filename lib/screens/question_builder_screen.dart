@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-// 경로는 프로젝트 구조에 맞게 조정하세요.
-// 예: lib/screens/ 밑에 있다면: import '../main_screen.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class QuestionBuilderScreen extends StatefulWidget {
   const QuestionBuilderScreen({super.key});
@@ -29,11 +28,21 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
   final List<TextEditingController> _controllers = [];
   final _formKey = GlobalKey<FormState>();
 
+  TextEditingController _newController([String? initial]) {
+    final c = TextEditingController(text: initial ?? "");
+    // 텍스트 변할 때 우측 'x' 표시 갱신용
+    c.addListener(() {
+      if (mounted) setState(() {});
+    });
+    return c;
+  }
+
   @override
   void initState() {
     super.initState();
+    // 처음 3개는 플레이스홀더를 "실제 텍스트"로 채워둠
     for (int i = 0; i < _minCount; i++) {
-      _controllers.add(TextEditingController());
+      _controllers.add(_newController(_placeholders[i]));
     }
   }
 
@@ -47,7 +56,9 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
 
   void _addQuestion() {
     if (_controllers.length >= _maxCount) return;
-    setState(() => _controllers.add(TextEditingController()));
+    final idx = _controllers.length;
+    final seed = idx < _placeholders.length ? _placeholders[idx] : "";
+    setState(() => _controllers.add(_newController(seed)));
   }
 
   void _removeQuestion() {
@@ -61,26 +72,41 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
   bool get _canAdd => _controllers.length < _maxCount;
   bool get _canRemove => _controllers.length > _minCount;
 
-  InputDecoration _whiteFieldDecoration({String? hint}) {
-    return const InputDecoration(
-      hintText: "",
-      hintStyle: TextStyle(color: Colors.black45, fontSize: 14, height: 1.35),
+  InputDecoration _whiteFieldDecoration({
+    required TextEditingController controller,
+    String? hint,
+  }) {
+    return InputDecoration(
+      hintText: hint ?? "",
+      hintStyle: const TextStyle(
+        color: Color(0xFF1F2937),
+        fontSize: 14,
+        height: 1.35,
+      ),
       filled: true,
       fillColor: Colors.white,
-      border: OutlineInputBorder(
+      border: const OutlineInputBorder(
         borderSide: BorderSide(color: Color(0xFFE6E8EB)),
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      enabledBorder: OutlineInputBorder(
+      enabledBorder: const OutlineInputBorder(
         borderSide: BorderSide(color: Color(0xFFE6E8EB)),
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      focusedBorder: OutlineInputBorder(
+      focusedBorder: const OutlineInputBorder(
         borderSide: BorderSide(color: Color(0xFF5BA7FF)),
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-    ).copyWith(hintText: hint);
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      // 우측 'x' 아이콘 (텍스트 있을 때만 보이게)
+      suffixIcon: controller.text.isNotEmpty
+          ? IconButton(
+              tooltip: "지우기",
+              icon: const Icon(Icons.close),
+              onPressed: () => controller.clear(),
+            )
+          : null,
+    );
   }
 
   Widget _sectionLabel(String text) {
@@ -90,7 +116,7 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
         text,
         style: const TextStyle(
           fontSize: 13,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w500,
           color: Colors.black,
         ),
       ),
@@ -122,7 +148,6 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
     );
   }
 
-  /// 등록하기 → 유효성 확인 후 "구해요" 탭으로 바로 이동
   void _submit() {
     final filled = _controllers.map((c) => c.text.trim()).toList();
     final first3Filled = filled.take(_minCount).every((t) => t.isNotEmpty);
@@ -133,7 +158,6 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
       ).showSnackBar(const SnackBar(content: Text("최소 3개의 질문을 입력해 주세요.")));
       return;
     }
-
     Navigator.pop(context, filled);
   }
 
@@ -154,7 +178,7 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.w700,
-            fontSize: 20,
+            fontSize: 18,
           ),
         ),
         centerTitle: true,
@@ -178,7 +202,10 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
                 ),
                 ...List.generate(_controllers.length, (index) {
                   final number = index + 1;
-                  final hint = _placeholders[index];
+                  // 플레이스홀더는 "입력값이 비어있을 때만" 안내용으로 사용
+                  final hint = (index < _placeholders.length)
+                      ? _placeholders[index]
+                      : null;
 
                   return Padding(
                     padding: EdgeInsets.only(
@@ -195,7 +222,10 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
                             height: 1.35,
                             color: Colors.black87,
                           ),
-                          decoration: _whiteFieldDecoration(hint: hint),
+                          decoration: _whiteFieldDecoration(
+                            controller: _controllers[index],
+                            hint: hint,
+                          ),
                         ),
                         if (index == _controllers.length - 1)
                           Padding(
@@ -204,14 +234,16 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 if (_controllers.length == _minCount)
+                                  // ➕ FontAwesome로 교체
                                   _circleIconButton(
-                                    icon: Icons.add,
+                                    icon: FontAwesomeIcons.plusCircle,
                                     onTap: _addQuestion,
                                     enabled: _canAdd,
                                   )
                                 else if (_controllers.length == _maxCount)
+                                  // ➖ FontAwesome로 교체
                                   _circleIconButton(
-                                    icon: Icons.remove,
+                                    icon: FontAwesomeIcons.minusCircle,
                                     onTap: _removeQuestion,
                                     enabled: _canRemove,
                                   )
@@ -219,13 +251,13 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
                                   Row(
                                     children: [
                                       _circleIconButton(
-                                        icon: Icons.add,
+                                        icon: FontAwesomeIcons.plusCircle,
                                         onTap: _addQuestion,
                                         enabled: _canAdd,
                                       ),
                                       const SizedBox(width: 12),
                                       _circleIconButton(
-                                        icon: Icons.remove,
+                                        icon: FontAwesomeIcons.minusCircle,
                                         onTap: _removeQuestion,
                                         enabled: _canRemove,
                                       ),

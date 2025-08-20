@@ -19,31 +19,30 @@ class ApplicationFormScreen extends StatefulWidget {
 
 class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final List<TextEditingController> _answers;
-  late final List<FocusNode> _focusNodes; // 포커스 감지용
 
-  @override
-  void initState() {
-    super.initState();
-    _answers = List.generate(
-      widget.questions.length,
-      (_) => TextEditingController(),
-    );
-    _focusNodes = List.generate(widget.questions.length, (i) {
-      final node = FocusNode();
-      node.addListener(() {
-        if (mounted) setState(() {});
-      });
-      return node;
+  // 컨트롤러는 제거하고, 값은 여기서 관리
+  final Map<int, String> _answersData = {};
+
+  // 포커스노드는 글로우용으로 "필요할 때만" 생성
+  final Map<int, FocusNode> _focusNodes = {};
+  FocusNode _nodeFor(int i) {
+    if (_focusNodes[i] != null) return _focusNodes[i]!;
+    final node = FocusNode();
+    node.addListener(() {
+      if (mounted) setState(() {});
     });
+    _focusNodes[i] = node;
+    return node;
   }
+
+  // ✅ 각 TextFormField의 에러 상태 확인용 키
+  final Map<int, GlobalKey<FormFieldState>> _fieldKeys = {};
+  GlobalKey<FormFieldState> _formFieldKeyFor(int i) =>
+      _fieldKeys.putIfAbsent(i, () => GlobalKey<FormFieldState>());
 
   @override
   void dispose() {
-    for (final c in _answers) {
-      c.dispose();
-    }
-    for (final f in _focusNodes) {
+    for (final f in _focusNodes.values) {
       f
         ..removeListener(() {})
         ..dispose();
@@ -51,40 +50,53 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
     super.dispose();
   }
 
-  // 기본 인풋 데코 (배경/보더만 담당)
   InputDecoration _field({String? hint}) => InputDecoration(
     hintText: hint ?? "답변을 입력하세요...",
     hintStyle: const TextStyle(color: kTextMuted),
     filled: true,
-    fillColor: kInputBg, // bg-gray-100 (#F3F4F6)
+    fillColor: kInputBg,
     border: const OutlineInputBorder(
-      borderSide: BorderSide(color: kInputBg), // border-gray-100
-      borderRadius: BorderRadius.all(Radius.circular(12)), // rounded-md
+      borderSide: BorderSide(color: kInputBg),
+      borderRadius: BorderRadius.all(Radius.circular(12)),
     ),
     enabledBorder: const OutlineInputBorder(
       borderSide: BorderSide(color: kInputBg),
       borderRadius: BorderRadius.all(Radius.circular(12)),
     ),
     focusedBorder: const OutlineInputBorder(
-      borderSide: BorderSide(color: kAccent, width: 2), // focus cyan (#00FFFF)
+      borderSide: BorderSide(color: kAccent, width: 1.6), // 살짝 얇게
       borderRadius: BorderRadius.all(Radius.circular(12)),
     ),
-    contentPadding: const EdgeInsets.all(12), // padding 12px
+    // ✅ 에러 상태 보더를 명시적으로 지정
+    errorBorder: OutlineInputBorder(
+      borderSide: BorderSide(color: Colors.red.shade300, width: 1.2),
+      borderRadius: const BorderRadius.all(Radius.circular(12)),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderSide: BorderSide(color: Colors.red.shade400, width: 1.6),
+      borderRadius: const BorderRadius.all(Radius.circular(12)),
+    ),
+    contentPadding: const EdgeInsets.all(12),
   );
 
-  // 글로우 래퍼: 포커스되면 외곽에 cyan 글로우
-  Widget _glowFieldWrapper({required bool isFocused, required Widget child}) {
+  // ✅ 에러일 때는 글로우 제거
+  Widget _glowFieldWrapper({
+    required bool isFocused,
+    required bool hasError,
+    required Widget child,
+  }) {
+    final showGlow = isFocused && !hasError;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 140),
       curve: Curves.easeOut,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        boxShadow: isFocused
+        boxShadow: showGlow
             ? const [
                 BoxShadow(
-                  color: Color(0x8000FFFF), // 50% 투명 cyan
-                  blurRadius: 7,
-                  spreadRadius: 1.2,
+                  color: Color(0x3300FFFF), // 20% 투명 cyan (기존 0x80 → 많이 낮춤)
+                  blurRadius: 5, // 기존 7 → 낮춤
+                  spreadRadius: 0.3, // 기존 0.8 → 낮춤
                   offset: Offset(0, 0),
                 ),
               ]
@@ -108,55 +120,58 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
     final String content = (widget.post["content"] as String?)?.trim() ?? "";
     final dynamic imageData = widget.post["image"]; // String(URL) 또는 Uint8List
 
-    // 썸네일 48x48, rounded-md
-    Widget? imageWidget;
-    if (imageData != null) {
-      if (imageData is String && imageData.isNotEmpty) {
-        imageWidget = ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            imageData,
-            width: 48,
-            height: 48,
-            fit: BoxFit.cover,
-          ),
-        );
-      } else if (imageData is Uint8List) {
-        imageWidget = ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.memory(
-            imageData,
-            width: 48,
-            height: 48,
-            fit: BoxFit.cover,
-          ),
-        );
-      }
-    }
+    // 카드 스케일 토큰 (요청값 고정)
+    final scale = 0.86;
+    final cardPad = 12.0 * scale;
+    final cardRadius = 12.0 * scale;
+    final imgRadius = 8.0 * scale;
+    final gapSm = 8.0 * scale;
+    final gapLg = 12.0 * scale;
+    final thumbW = 72.0 * scale;
+    final thumbH = 72.0 * scale;
+    final titleSize = 15.5 * scale;
+    final contentSize = 13.0 * scale;
+
+    // 디바이스 픽셀 비율 기반 이미지 다운샘플 크기
+    int cw(double w) => (w * MediaQuery.of(context).devicePixelRatio).round();
+    int ch(double h) => (h * MediaQuery.of(context).devicePixelRatio).round();
 
     return Scaffold(
-      backgroundColor: kPageBg,
+      backgroundColor: const Color(0xFFFFFFFF),
       appBar: AppBar(
-        toolbarHeight: 64, // 헤더 높이 64px
+        toolbarHeight: 64,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: kTextPrimary),
+        centerTitle: true,
         title: const Text(
           "지원서 작성",
-          style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: kTextPrimary,
+            fontWeight: FontWeight.w700,
+            fontSize: 18.0,
+          ),
         ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        iconTheme: const IconThemeData(color: kTextPrimary),
+        // 구분선 조금 띄워서 표시
+        flexibleSpace: Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Container(height: 1, color: kDivider),
+          ),
+        ),
       ),
+
       body: Center(
-        // max-width: 768px & 중앙 정렬
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 768),
           child: Form(
             key: _formKey,
+            autovalidateMode:
+                AutovalidateMode.disabled, // 필요시 onUserInteraction로 변경 가능
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 120), // 섹션 여백 24px
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 120),
               children: [
-                // 레이블(박스 밖)
                 const Padding(
                   padding: EdgeInsets.only(left: 2, bottom: 8),
                   child: Text(
@@ -165,42 +180,62 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                   ),
                 ),
 
-                // 카드 컨테이너
+                // 카드
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(cardPad),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(cardRadius),
                     border: Border.all(color: kDivider),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (imageWidget != null) imageWidget,
-                      if (imageWidget != null) const SizedBox(width: 12),
+                      if (imageData != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(imgRadius),
+                          child: SizedBox(
+                            width: thumbW,
+                            height: thumbH,
+                            child: (imageData is String && imageData.isNotEmpty)
+                                ? Image.network(
+                                    imageData,
+                                    fit: BoxFit.cover,
+                                    cacheWidth: cw(thumbW),
+                                    cacheHeight: ch(thumbH),
+                                  )
+                                : (imageData is Uint8List)
+                                ? Image.memory(
+                                    imageData,
+                                    fit: BoxFit.cover,
+                                    cacheWidth: cw(thumbW),
+                                    cacheHeight: ch(thumbH),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ),
+                      if (imageData != null) SizedBox(width: gapLg),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 제목
                             Text(
                               title,
-                              style: const TextStyle(
-                                fontSize: 16,
+                              style: TextStyle(
+                                fontSize: titleSize,
                                 fontWeight: FontWeight.w700,
                                 color: kTextPrimary,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            // 내용 (멀티라인, ellipsis)
+                            SizedBox(height: gapSm),
                             Text(
                               content.isEmpty ? "내용이 없습니다." : content,
-                              style: const TextStyle(
-                                fontSize: 14.5,
-                                height: 1.5,
+                              style: TextStyle(
+                                fontSize: contentSize,
+                                height: 1.45,
                                 color: kTextPrimary,
                               ),
-                              maxLines: 6,
+                              maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
@@ -210,7 +245,6 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                   ),
                 ),
 
-                // 👇 여기 추가: 카드와 같은 폭의 구분선(간격 포함)
                 const SizedBox(height: 30),
                 const Divider(height: 1, thickness: 1, color: kDivider),
                 const SizedBox(height: 24),
@@ -219,57 +253,75 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                   "질문",
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: kTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 10),
 
-                // 각 질문 필드에 글로우 적용
-                ...List.generate(widget.questions.length, (i) {
-                  final q = widget.questions[i];
-                  final node = _focusNodes[i];
+                // 질문 필드 (지연 렌더링)
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: widget.questions.length,
+                  itemBuilder: (context, i) {
+                    final q = widget.questions[i];
+                    final node = _nodeFor(i);
+                    final fieldKey = _formFieldKeyFor(i);
+                    final hasError = fieldKey.currentState?.hasError ?? false;
 
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: i == widget.questions.length - 1 ? 0 : 16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "${i + 1}. $q",
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: kTextPrimary,
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: i == widget.questions.length - 1 ? 0 : 16,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "${i + 1}. $q",
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: kTextPrimary,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        _glowFieldWrapper(
-                          isFocused: node.hasFocus,
-                          child: TextFormField(
-                            focusNode: node,
-                            controller: _answers[i],
-                            minLines: 4,
-                            maxLines: 8,
-                            decoration: _field(hint: "답변을 입력하세요..."),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? "답변을 입력해 주세요."
-                                : null,
+                          const SizedBox(height: 6),
+                          _glowFieldWrapper(
+                            isFocused: node.hasFocus,
+                            hasError: hasError, // ✅ 에러면 글로우 끔
+                            child: TextFormField(
+                              key: fieldKey, // ✅ 에러 상태 확인용 키
+                              focusNode: node,
+                              minLines: 4,
+                              maxLines: 8,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: kTextPrimary,
+                              ),
+                              decoration: _field(hint: "답변을 입력하세요...").copyWith(
+                                hintStyle: const TextStyle(
+                                  color: kTextMuted,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              initialValue: _answersData[i] ?? "",
+                              onChanged: (v) => _answersData[i] = v,
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? "답변을 입력해 주세요."
+                                  : null,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
         ),
       ),
 
-      // 하단 버튼(구분선/섀도우 없이, 페이지와 같은 z-index 느낌)
       bottomSheet: Container(
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 10),
         color: Colors.white,
@@ -290,7 +342,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: Color(0xFF252525),
               ),
             ),
           ),

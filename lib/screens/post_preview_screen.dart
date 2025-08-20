@@ -21,24 +21,35 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
   int _likeCount = 0;
   int _viewCount = 0;
 
+  // 전환 전 이미지 프리캐시용
+  ImageProvider? _heroImageProvider;
+
   @override
   void initState() {
     super.initState();
     _isLiked = widget.post['isLiked'] ?? false;
     _likeCount = widget.post['likes'] ?? 0;
     _viewCount = widget.post['views'] ?? 0;
+
+    // 이미지 프리캐시 준비
+    final img = widget.post['image'];
+    if (img is String && img.isNotEmpty) {
+      _heroImageProvider = NetworkImage(img);
+    } else if (img is Uint8List) {
+      _heroImageProvider = MemoryImage(img);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_heroImageProvider != null && mounted) {
+        precacheImage(_heroImageProvider!, context);
+      }
+    });
   }
 
   String _formatRemain(DateTime d) {
     final now = DateTime.now();
     if (!d.isAfter(now)) return "마감됨";
     final diff = d.difference(now);
-
-    if (diff.inDays >= 1) {
-      return "D - ${diff.inDays}";
-    }
-
-    // ✅ 하루 미만 남았다면 그냥 D-day로 표시
+    if (diff.inDays >= 1) return "D - ${diff.inDays}";
     return "D - day";
   }
 
@@ -183,7 +194,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
       backgroundColor: theme.kPageBg,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0.5,
+        elevation: 0, // 기본 그림자 제거
         iconTheme: const IconThemeData(color: theme.kTextPrimary),
         centerTitle: true,
         title: Text(
@@ -195,11 +206,20 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
           ),
           overflow: TextOverflow.ellipsis,
         ),
+        // 하단 구분선을 살짝 위로 띄워서 표시 (kDivider 사용)
+        flexibleSpace: Align(
+          alignment: Alignment.bottomCenter,
+          child: const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: SizedBox(
+              height: 1,
+              child: ColoredBox(color: theme.kDivider),
+            ),
+          ),
+        ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(
-              right: 8.0,
-            ), // ← 오른쪽 여백 줄여서 아이콘을 살짝 왼쪽으로
+            padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
               icon: FaIcon(
                 _isLiked ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
@@ -268,7 +288,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // ⬇ 태그들을 감싸는 하나의 라운드 박스
+                    // 태그 묶음
                     Flexible(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -296,7 +316,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                                             fontSize: 12,
                                             color: Color(0xFF1F2937),
                                             height: 1.0,
-                                            fontWeight: FontWeight.w500, // ← 추가
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                       ),
@@ -345,27 +365,27 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
 
                 const SizedBox(height: 20),
 
-                if (useTemplate) ...[
+                if (_looksLikeTemplate(content)) ...[
                   _sectionRow(
                     iconRegular: FontAwesomeIcons.addressCard,
                     title: "모집 대상",
-                    items: parsed["모집 대상"] ?? const [],
+                    items: (_parseTemplate(content)["모집 대상"] ?? const []),
                   ),
                   _sectionRow(
                     iconRegular: FontAwesomeIcons.fileLines,
                     title: "활동 내용",
-                    items: parsed["활동 내용"] ?? const [],
+                    items: (_parseTemplate(content)["활동 내용"] ?? const []),
                   ),
                   _sectionRow(
                     iconRegular: FontAwesomeIcons.circleCheck,
                     title: "필요 역량",
-                    items: parsed["필요 역량"] ?? const [],
+                    items: (_parseTemplate(content)["필요 역량"] ?? const []),
                   ),
                   _sectionRow(
                     customIconAsset: "assets/icons/free-icon-info.png",
                     customIconSize: 20,
                     title: "추가 정보",
-                    items: parsed["추가 정보"] ?? const [],
+                    items: (_parseTemplate(content)["추가 정보"] ?? const []),
                   ),
                 ] else ...[
                   Text(
@@ -387,12 +407,16 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               // 외부 콜백이 들어오면 우선 사용
               if (widget.onApply != null) {
                 widget.onApply!.call();
                 return;
               }
+
+              // 전환 직전 한 프레임 양보(미세한 멈칫 완화)
+              await Future.delayed(Duration.zero);
+
               // 기본 동작: 지원서로 이동
               final qs =
                   (widget.post['questions'] as List?)?.cast<String>() ??
@@ -417,7 +441,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
               "지원하기",
               style: GoogleFonts.notoSansKr(
                 fontSize: 20,
-                fontWeight: FontWeight.w600, // 진짜 Black 웨이트 다운로드됨
+                fontWeight: FontWeight.w600,
                 color: const Color.fromARGB(255, 37, 37, 37),
               ),
             ),
