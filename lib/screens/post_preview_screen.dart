@@ -440,7 +440,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
             child: Text(
               "지원하기",
               style: GoogleFonts.notoSansKr(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: const Color.fromARGB(255, 37, 37, 37),
               ),

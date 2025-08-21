@@ -196,8 +196,9 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
+            FontAwesomeIcons.arrowLeft,
             color: Colors.black,
+            size: 21,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -211,8 +212,17 @@ class _QuestionBuilderScreenState extends State<QuestionBuilderScreen> {
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
-        elevation: 0.5,
+        elevation: 0, // ← 그림자 제거
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            color: Color(0xFFCBD5E1), // kBorderStrong 과 동일
+          ),
+        ),
       ),
+
       body: Form(
         key: _formKey,
         child: SafeArea(

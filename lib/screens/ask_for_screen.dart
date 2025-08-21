@@ -273,7 +273,7 @@ class _AskForScreenState extends State<AskForScreen> {
                       color: theme.kWhite,
                       borderRadius: BorderRadius.circular(chipRadius),
                       border: Border.all(
-                        color: selected ? theme.kTextPrimary : theme.kDivider,
+                        color: selected ? theme.kTextPrimary : const Color.fromARGB(255, 211, 211, 211),
                         width: 1,
                       ),
                       boxShadow: [
@@ -306,7 +306,7 @@ class _AskForScreenState extends State<AskForScreen> {
             label: _selectedCategory,
             items: _categories,
             onSelected: (v) => setState(() => _selectedCategory = v),
-            accent: theme.kAccent,
+            accent: const Color.fromARGB(255, 88, 188, 255),
             radius: chipRadius,
             hPad: chipHPad,
             vPad: chipVPad,
@@ -372,7 +372,7 @@ class _CategoryChipMenu extends StatelessWidget {
           context: context,
           position: position,
           color: theme.kWhite,
-          elevation: 10,
+          elevation: 1,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           constraints: BoxConstraints(minWidth: 0, maxWidth: maxMenuWidth),
           items: items.map((e) {
@@ -491,7 +491,7 @@ class _ChipButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      elevation: 2,
+      elevation: 0,
       shadowColor: Colors.black.withOpacity(0.04),
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(radius),

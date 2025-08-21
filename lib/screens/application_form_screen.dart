@@ -57,24 +57,24 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
     fillColor: kInputBg,
     border: const OutlineInputBorder(
       borderSide: BorderSide(color: kInputBg),
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderRadius: BorderRadius.all(Radius.circular(4)), // ✅ 기본 radius
     ),
     enabledBorder: const OutlineInputBorder(
       borderSide: BorderSide(color: kInputBg),
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderRadius: BorderRadius.all(Radius.circular(4)), // ✅ 평상시 radius
     ),
     focusedBorder: const OutlineInputBorder(
-      borderSide: BorderSide(color: kAccent, width: 1.6), // 살짝 얇게
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderSide: BorderSide(color: kAccent, width: 1.6), // ✅ 포커스시 radius
+      borderRadius: BorderRadius.all(Radius.circular(4)),
     ),
     // ✅ 에러 상태 보더를 명시적으로 지정
     errorBorder: OutlineInputBorder(
       borderSide: BorderSide(color: Colors.red.shade300, width: 1.2),
-      borderRadius: const BorderRadius.all(Radius.circular(12)),
+      borderRadius: const BorderRadius.all(Radius.circular(4)), // ✅ 에러시 radius
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderSide: BorderSide(color: Colors.red.shade400, width: 1.6),
-      borderRadius: const BorderRadius.all(Radius.circular(12)),
+      borderRadius: const BorderRadius.all(Radius.circular(4)), // ✅ 에러 + 포커스 radius
     ),
     contentPadding: const EdgeInsets.all(12),
   );
@@ -90,7 +90,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
       duration: const Duration(milliseconds: 140),
       curve: Curves.easeOut,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: showGlow
             ? const [
                 BoxShadow(
