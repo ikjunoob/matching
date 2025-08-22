@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -18,11 +19,10 @@ class CustomBottomNavBar extends StatelessWidget {
     const navBarHeight = 56.0;
     const floatingSize = 64.0;
 
-    // 중앙 버튼을 더 위로 올림 (양수방향)
-    final double floatingBottom = navBarHeight / 2 - 4; // (숫자 ↑ 클수록 위로)
+    final double floatingBottom = navBarHeight / 2 - 4; // (↑ 클수록 위로)
 
     return SizedBox(
-      height: navBarHeight + 24, // 충분한 여유
+      height: navBarHeight + 24,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
@@ -76,33 +76,31 @@ class CustomBottomNavBar extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  // 홈 (FontAwesome home)
                   _NavBarIcon(
-                    icon: Icons.home_rounded,
+                    icon: FontAwesomeIcons.home,
                     isActive: currentIndex == 0,
                     onTap: () => onTap(0),
-                    size: 28,
+                    size: 26,
                   ),
+                  // 모임/커뮤니티 (Material diversity_3)
                   _NavBarIcon(
-                    custom: Image.network(
-                      "https://cdn-icons-png.flaticon.com/512/1436/1436701.png",
-                      width: 25,
-                      height: 25,
-                      color: currentIndex == 1
-                          ? Colors.black
-                          : Colors.grey[400],
-                    ),
+                    icon: Icons.diversity_3,
                     isActive: currentIndex == 1,
                     onTap: () => onTap(1),
+                    size: 28,
                   ),
                   const Expanded(child: SizedBox()),
+                  // 시간표/캘린더 (FontAwesome calendar-alt)
                   _NavBarIcon(
-                    icon: Icons.calendar_today_outlined,
+                    icon: FontAwesomeIcons.calendarAlt,
                     isActive: currentIndex == 3,
                     onTap: () => onTap(3),
-                    size: 25,
+                    size: 24,
                   ),
+                  // 마이페이지 (FontAwesome user-circle)
                   _NavBarIcon(
-                    icon: Icons.person_rounded,
+                    icon: FontAwesomeIcons.userCircle,
                     isActive: currentIndex == 4,
                     onTap: () => onTap(4),
                     size: 28,
@@ -117,16 +115,14 @@ class CustomBottomNavBar extends StatelessWidget {
   }
 }
 
-// 곡선 배경 Painter
+// ===== 배경 Painter (변경 없음) =====
 class _NavBarBgPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // 배경 Paint
     final paint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
 
-    // 위쪽 Border Paint (1px 연한 회색)
     final topBorderPaint = Paint()
       ..color = Colors.grey.shade200
       ..strokeWidth = 1
@@ -134,11 +130,9 @@ class _NavBarBgPainter extends CustomPainter {
 
     final path = Path();
 
-    // 좌측 라운드
     path.moveTo(0, 20);
     path.quadraticBezierTo(0, 0, 20, 0);
 
-    // 움푹 파인 부분
     final double curveWidth = 0.20;
     final double dipStart = size.width * (0.504 - curveWidth / 2);
     final double dipEnd = size.width * (0.5 + curveWidth / 2);
@@ -146,7 +140,6 @@ class _NavBarBgPainter extends CustomPainter {
     final double dipDepth = 30;
 
     path.lineTo(dipStart, 0);
-
     path.cubicTo(
       dipStart + size.width * 0.02,
       0,
@@ -170,11 +163,9 @@ class _NavBarBgPainter extends CustomPainter {
     path.lineTo(0, size.height);
     path.close();
 
-    // 그림자 + 배경
     canvas.drawShadow(path, Colors.black.withOpacity(0.09), 8, false);
     canvas.drawPath(path, paint);
 
-    // 위쪽 Border 라인만
     final topBorderPath = Path();
     topBorderPath.moveTo(0, 20);
     topBorderPath.quadraticBezierTo(0, 0, 20, 0);
@@ -205,17 +196,15 @@ class _NavBarBgPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// 네비 아이콘
+// ===== 아이콘 Wrapper =====
 class _NavBarIcon extends StatelessWidget {
-  final IconData? icon;
-  final Widget? custom;
+  final IconData icon;
   final bool isActive;
   final VoidCallback onTap;
   final double size;
 
   const _NavBarIcon({
-    this.icon,
-    this.custom,
+    required this.icon,
     required this.isActive,
     required this.onTap,
     this.size = 22,
@@ -223,14 +212,13 @@ class _NavBarIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 눌렸을 때 검은색, 아닐 때 회색
     final color = isActive ? Colors.black : Colors.grey[400];
     return Expanded(
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
         child: Center(
-          child: custom ?? Icon(icon, size: size, color: color),
+          child: Icon(icon, size: size, color: color),
         ),
       ),
     );

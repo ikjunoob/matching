@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ChatListScreen extends StatelessWidget {
   const ChatListScreen({super.key});
@@ -17,15 +18,16 @@ class ChatListScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: const FaIcon(FontAwesomeIcons.arrowLeft,
+              color: Color(0xFF1F2937), size: 21), // ✅ 폰트어썸 arrowLeft, 사이즈 21
           onPressed: () => Navigator.pop(context),
         ),
-        title: Align(
+        title: const Align(
           alignment: Alignment.centerLeft,
           child: Text(
             "채팅",
-            style: const TextStyle(
-              color: Colors.black,
+            style: TextStyle(
+              color: Color(0xFF1F2937),
               fontSize: 18,
               fontWeight: FontWeight.bold,
               height: 1.1,

@@ -273,7 +273,9 @@ class _AskForScreenState extends State<AskForScreen> {
                       color: theme.kWhite,
                       borderRadius: BorderRadius.circular(chipRadius),
                       border: Border.all(
-                        color: selected ? theme.kTextPrimary : const Color.fromARGB(255, 211, 211, 211),
+                        color: selected
+                            ? theme.kTextPrimary
+                            : const Color.fromARGB(255, 211, 211, 211),
                         width: 1,
                       ),
                       boxShadow: [
@@ -525,9 +527,10 @@ class _ChipButton extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 4 * (fontSize / 12.0)),
-                  const FaIcon(
+                  // ✅ FontAwesome Chevron Down 아이콘으로 교체
+                  FaIcon(
                     FontAwesomeIcons.chevronDown,
-                    size: 14,
+                    size: iconSize, // ← 전달받은 iconSize 사용
                     color: theme.kTextPrimary,
                   ),
                 ],

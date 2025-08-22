@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -38,20 +39,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
     {"title": "'이달의 인기 유저'로 선정되셨습니다! 축하드려요.", "time": "3일 전", "unread": false},
   ];
 
-  // 제목 키워드로 아이콘/색 결정
+  // 제목 키워드로 아이콘/색 결정 (FontAwesome 아이콘 매핑)
   IconData _iconForTitle(String title) {
     if (title.contains("승인") || title.contains("완료") || title.contains("수정")) {
-      return Icons.check_circle;
+      return FontAwesomeIcons.checkCircle; // 활동 체크
     }
-    if (title.contains("공지")) return Icons.campaign;
-    if (title.contains("댓글")) return Icons.mode_comment;
-    if (title.contains("초대")) return Icons.mail_outline;
-    if (title.contains("이벤트")) return Icons.card_giftcard;
-    if (title.contains("추천")) return Icons.thumb_up_alt_outlined;
+    if (title.contains("공지")) return FontAwesomeIcons.bullhorn; // 뉴스/공지
+    if (title.contains("댓글")) return FontAwesomeIcons.solidCommentDots; // 대화/댓글
+    if (title.contains("초대")) return FontAwesomeIcons.solidCommentDots; // 쪽지/대화
+    if (title.contains("이벤트")) return FontAwesomeIcons.infoCircle; // 정보성
+    if (title.contains("추천")) return FontAwesomeIcons.infoCircle; // 정보성
     if (title.contains("모임") || title.contains("동아리")) {
-      return Icons.groups_2_outlined;
+      return FontAwesomeIcons.users; // 그룹
     }
-    return Icons.notifications_none;
+    return FontAwesomeIcons.infoCircle; // 기본 정보
   }
 
   Color _iconColorForTitle(String title) {
@@ -74,7 +75,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: const FaIcon(
+            FontAwesomeIcons.arrowLeft,
+            color: Colors.black,
+            size: 18,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Align(
@@ -117,7 +122,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 30),
               color: Colors.red.withOpacity(0.13),
-              child: const Icon(Icons.delete, color: Colors.red, size: 26),
+              child: const FaIcon(
+                FontAwesomeIcons.trash,
+                color: Colors.red,
+                size: 20,
+              ),
             ),
             child: GestureDetector(
               onTap: () {
@@ -147,12 +156,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        FaIcon(
                           _iconForTitle(title),
                           size: 14,
                           color: _iconColorForTitle(title),
                         ),
-                        const SizedBox(width: 6), // 아이콘-시간 간격 고정
+                        const SizedBox(width: 6), // 아이콘-시간 간격
                         Text(
                           time,
                           style: const TextStyle(
@@ -164,15 +173,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ),
                   ),
                   trailing: unread
-                      ? const Icon(
-                          Icons.fiber_manual_record,
-                          size: 10,
+                      ? const FaIcon(
+                          FontAwesomeIcons.solidCircle,
+                          size: 8,
                           color: Color(0xFF06B6D4),
                         )
                       : IconButton(
-                          icon: const Icon(
-                            Icons.close,
-                            size: 16,
+                          icon: const FaIcon(
+                            FontAwesomeIcons.times,
+                            size: 14,
                             color: Color(0xFF6B7280),
                           ),
                           tooltip: "알림 삭제",

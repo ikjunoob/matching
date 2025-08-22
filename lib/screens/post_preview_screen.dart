@@ -194,9 +194,17 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
       backgroundColor: theme.kPageBg,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0, // 기본 그림자 제거
+        elevation: 0,
         iconTheme: const IconThemeData(color: theme.kTextPrimary),
         centerTitle: true,
+        leading: IconButton(
+          icon: const FaIcon(
+            FontAwesomeIcons.arrowLeft,
+            size: 21,
+            color: theme.kTextPrimary,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
           title,
           style: const TextStyle(
@@ -206,7 +214,6 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
           ),
           overflow: TextOverflow.ellipsis,
         ),
-        // 하단 구분선을 살짝 위로 띄워서 표시 (kDivider 사용)
         flexibleSpace: Align(
           alignment: Alignment.bottomCenter,
           child: const Padding(
@@ -273,7 +280,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 제목 (본문에도 한번 더 — 디자인 유지용)
+                // 제목
                 Text(
                   title,
                   style: const TextStyle(
@@ -346,7 +353,7 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
 
                     const SizedBox(width: 14),
 
-                    // 좋아요
+                    // 좋아요(채움)
                     const FaIcon(
                       FontAwesomeIcons.solidHeart,
                       size: 14,
@@ -366,26 +373,29 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                 const SizedBox(height: 20),
 
                 if (_looksLikeTemplate(content)) ...[
+                  // ✅ 모집 대상: users
                   _sectionRow(
-                    iconRegular: FontAwesomeIcons.addressCard,
+                    iconRegular: FontAwesomeIcons.users,
                     title: "모집 대상",
-                    items: (_parseTemplate(content)["모집 대상"] ?? const []),
+                    items: (parsed["모집 대상"] ?? const []),
                   ),
+                  // ✅ 활동 내용: clipboard-list
                   _sectionRow(
-                    iconRegular: FontAwesomeIcons.fileLines,
+                    iconRegular: FontAwesomeIcons.clipboardList,
                     title: "활동 내용",
-                    items: (_parseTemplate(content)["활동 내용"] ?? const []),
+                    items: (parsed["활동 내용"] ?? const []),
                   ),
+                  // ✅ 필요 역량: laptop
                   _sectionRow(
-                    iconRegular: FontAwesomeIcons.circleCheck,
+                    iconRegular: FontAwesomeIcons.laptop,
                     title: "필요 역량",
-                    items: (_parseTemplate(content)["필요 역량"] ?? const []),
+                    items: (parsed["필요 역량"] ?? const []),
                   ),
+                  // ✅ 추가 정보: circle-info (커스텀 asset 사용 안 함)
                   _sectionRow(
-                    customIconAsset: "assets/icons/free-icon-info.png",
-                    customIconSize: 20,
+                    iconRegular: FontAwesomeIcons.circleInfo,
                     title: "추가 정보",
-                    items: (_parseTemplate(content)["추가 정보"] ?? const []),
+                    items: (parsed["추가 정보"] ?? const []),
                   ),
                 ] else ...[
                   Text(
@@ -414,7 +424,6 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
                 return;
               }
 
-              // 전환 직전 한 프레임 양보(미세한 멈칫 완화)
               await Future.delayed(Duration.zero);
 
               // 기본 동작: 지원서로 이동
