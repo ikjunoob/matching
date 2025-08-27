@@ -80,10 +80,19 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ▼▼▼▼▼ [수정] 아이콘 정렬 및 크기 조절 ▼▼▼▼▼
           SizedBox(
             width: 28,
-            child: FaIcon(icon, size: 20, color: theme.kTextMuted),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FaIcon(
+                icon,
+                size: (icon == FontAwesomeIcons.userFriends) ? 18 : 20,
+                color: theme.kTextMuted,
+              ),
+            ),
           ),
+          // ▲▲▲▲▲ [수정] 아이콘 정렬 및 크기 조절 ▲▲▲▲▲
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -265,8 +274,8 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Icon(
-                        FontAwesomeIcons.solidEye,
+                      const FaIcon(
+                        FontAwesomeIcons.eye,
                         size: 14,
                         color: theme.kTextMuted,
                       ),
@@ -277,9 +286,9 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
                       ),
                       const SizedBox(width: 12),
                       const FaIcon(
-                        FontAwesomeIcons.solidHeart, // 항상 채워진 하트로 고정
+                        FontAwesomeIcons.solidHeart,
                         size: 14,
-                        color: Colors.red, // 항상 빨간색으로 고정
+                        color: Color(0xFFFF4D4D),
                       ),
                       const SizedBox(width: 4),
                       const Text(
@@ -288,18 +297,17 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
 
                   // 3. 템플릿 또는 일반 텍스트
                   if (useTemplate && parsedContent != null) ...[
                     _buildSection(
-                      icon: FontAwesomeIcons.fileAlt,
+                      icon: FontAwesomeIcons.file,
                       title: "이 장소의 매력은 무엇인가요?",
                       content: parsedContent["이 장소의 매력은 무엇인가요?"] ?? "",
                     ),
                     _buildSection(
-                      icon: FontAwesomeIcons.users,
+                      icon: FontAwesomeIcons.userFriends,
                       title: "어떤 사람에게 추천하나요?",
                       content: parsedContent["어떤 사람에게 추천하나요?"] ?? "",
                     ),
