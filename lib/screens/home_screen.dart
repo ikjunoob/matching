@@ -5,7 +5,7 @@ import 'chat_list_screen.dart';
 import 'dart:ui';
 import 'ask_for_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'place_tab_screen.dart'; // ★ 추가
+import 'place_tab_screen.dart';
 
 /// ===== Design Tokens (캡처 기준 색상) =====
 const kPageBg = Color(0xFFF9FAFB); // 전체 배경

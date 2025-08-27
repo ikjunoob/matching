@@ -1,7 +1,8 @@
-// place_tab_screen.dart
 import "dart:typed_data";
 import "package:flutter/material.dart";
 import "package:font_awesome_flutter/font_awesome_flutter.dart";
+
+// 공통 토큰 (임시 정의)
 import "ask_for_common.dart" as theme;
 import "place_create_screen.dart"; // ★ 장소 작성 화면
 
@@ -290,8 +291,6 @@ class _SortAndCategoryBar extends StatelessWidget {
               );
             }).toList(),
           ),
-
-          // AskForScreen과 동일 파라미터
           _CategoryChipMenu(
             label: selectedCategory,
             items: categories,
@@ -303,7 +302,10 @@ class _SortAndCategoryBar extends StatelessWidget {
   }
 }
 
-/// 카테고리 드롭다운 버튼(경량)
+// ================================================================
+// ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 기존 _CategoryChipMenu를 아래 위젯들로 교체 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+// ================================================================
+
 class _CategoryChipMenu extends StatelessWidget {
   final String label;
   final List<String> items;
@@ -317,100 +319,216 @@ class _CategoryChipMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Builder(
-      builder: (ctx) {
-        return InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () async {
-            final box = ctx.findRenderObject() as RenderBox;
-            final overlay =
-                Overlay.of(ctx).context.findRenderObject() as RenderBox;
-            final pos = RelativeRect.fromRect(
-              Rect.fromPoints(
-                box.localToGlobal(
-                  Offset(0, box.size.height),
-                  ancestor: overlay,
-                ),
-                box.localToGlobal(
-                  box.size.bottomRight(Offset.zero),
-                  ancestor: overlay,
-                ),
-              ),
-              Offset.zero & overlay.size,
-            );
-            final sel = await showMenu<String>(
-              context: ctx,
-              position: pos,
-              color: theme.kWhite,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              items: items
-                  .map(
-                    (e) => PopupMenuItem<String>(
-                      value: e,
-                      height: 40,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              e,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: theme.kTextPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                height: 1.1,
-                              ),
-                            ),
-                          ),
-                          Opacity(
-                            opacity: e == label ? 1 : 0,
-                            child: const Icon(
-                              Icons.check,
-                              size: 18,
-                              color: theme.kTextPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList(),
-            );
-            if (sel != null) onSelected(sel);
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: theme.kWhite,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: theme.kDivider),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text(
-                  "카테고리",
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.1,
-                    color: theme.kTextPrimary,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-                SizedBox(width: 4),
-                FaIcon(
-                  FontAwesomeIcons.chevronDown,
-                  size: 14,
-                  color: theme.kTextPrimary,
-                ),
-              ],
+    // scale 변수들을 상수로 정의
+    const double scale = 1.0;
+    const double chipRadius = 14.0 * scale;
+    const double chipHPad = 10.0 * scale;
+    const double chipVPad = 6.0 * scale;
+    const double fontSize = 12.0 * scale;
+    const double iconSize = 14.0 * scale;
+    const double menuItemHeight = 40.0 * scale;
+    const double menuFontSize = 15.0 * scale;
+    // 요청에 따라 너비를 160으로 고정
+    const double maxMenuWidth = 160.0;
+    const Color accentColor = Color.fromARGB(255, 88, 188, 255);
+
+    return _ChipButton(
+      label: label,
+      radius: chipRadius,
+      hPad: chipHPad,
+      vPad: chipVPad,
+      fontSize: fontSize,
+      iconSize: iconSize,
+      onTap: (box) async {
+        final overlay =
+            Overlay.of(context).context.findRenderObject() as RenderBox;
+        final position = RelativeRect.fromRect(
+          Rect.fromPoints(
+            box.localToGlobal(Offset(0, box.size.height), ancestor: overlay),
+            box.localToGlobal(
+              box.size.bottomRight(Offset.zero),
+              ancestor: overlay,
             ),
           ),
+          Offset.zero & overlay.size,
         );
+
+        final selected = await showMenu<String>(
+          context: context,
+          position: position,
+          color: theme.kWhite,
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          // 너비를 160으로 고정
+          constraints: const BoxConstraints(
+            minWidth: maxMenuWidth,
+            maxWidth: maxMenuWidth,
+          ),
+          items: items.map((e) {
+            final isSel = e == label;
+            return PopupMenuItem<String>(
+              value: e,
+              height: menuItemHeight,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: _HoverMenuTile(
+                text: e,
+                isSelected: isSel,
+                accent: accentColor,
+                fontSize: menuFontSize,
+              ),
+            );
+          }).toList(),
+        );
+        if (selected != null) onSelected(selected);
       },
+    );
+  }
+}
+
+/// 드롭다운 메뉴의 각 항목을 위한 위젯 (호버/탭 상태 관리)
+class _HoverMenuTile extends StatefulWidget {
+  final String text;
+  final bool isSelected;
+  final Color accent;
+  final double fontSize;
+
+  const _HoverMenuTile({
+    required this.text,
+    required this.isSelected,
+    required this.accent,
+    required this.fontSize,
+  });
+
+  @override
+  State<_HoverMenuTile> createState() => _HoverMenuTileState();
+}
+
+class _HoverMenuTileState extends State<_HoverMenuTile> {
+  bool _hovered = false;
+  bool _tapped = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = _hovered || _tapped || widget.isSelected;
+    return Listener(
+      onPointerDown: (_) => setState(() => _tapped = true),
+      onPointerUp: (_) => setState(() => _tapped = false),
+      onPointerCancel: (_) => setState(() => _tapped = false),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: active
+                ? widget.accent.withOpacity(0.14)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.text,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: widget.fontSize,
+                    height: 1.1,
+                    fontWeight: widget.isSelected
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                    color: theme.kTextPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: Opacity(
+                  opacity: widget.isSelected ? 1 : 0,
+                  child: const Icon(
+                    Icons.check,
+                    size: 18,
+                    color: theme.kTextPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 드롭다운 메뉴를 여는 칩 모양 버튼 위젯
+class _ChipButton extends StatelessWidget {
+  final String label;
+  final double radius, hPad, vPad, fontSize, iconSize;
+  final void Function(RenderBox box) onTap;
+
+  const _ChipButton({
+    required this.label,
+    required this.radius,
+    required this.hPad,
+    required this.vPad,
+    required this.fontSize,
+    required this.iconSize,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 0,
+      shadowColor: Colors.black.withOpacity(0.04),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(radius),
+      child: Builder(
+        builder: (ctx) {
+          return InkWell(
+            borderRadius: BorderRadius.circular(radius),
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            onTap: () {
+              final box = ctx.findRenderObject() as RenderBox;
+              onTap(box);
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+              decoration: BoxDecoration(
+                color: theme.kWhite,
+                borderRadius: BorderRadius.circular(radius),
+                border: Border.all(color: theme.kDivider),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      height: 1.1,
+                      color: theme.kTextPrimary,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                  SizedBox(width: 4 * (fontSize / 12.0)),
+                  FaIcon(
+                    FontAwesomeIcons.chevronDown,
+                    size: iconSize,
+                    color: theme.kTextPrimary,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -552,7 +670,6 @@ class PlaceListCard extends StatelessWidget {
                                 color: theme.kTextMuted,
                               ),
                             ),
-
                             const SizedBox(width: 10),
                             const FaIcon(
                               FontAwesomeIcons.solidEye,
@@ -567,7 +684,6 @@ class PlaceListCard extends StatelessWidget {
                                 color: theme.kTextMuted,
                               ),
                             ),
-
                             const SizedBox(width: 10),
                             const FaIcon(
                               FontAwesomeIcons.solidHeart,

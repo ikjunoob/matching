@@ -1,18 +1,20 @@
-// place_create_screen.dart
-import "dart:io";
-import "dart:typed_data";
-import "package:flutter/foundation.dart" show kIsWeb;
-import "package:flutter/material.dart";
-import "package:flutter/services.dart";
-import "package:font_awesome_flutter/font_awesome_flutter.dart";
-import "package:dropdown_button2/dropdown_button2.dart";
-import "package:file_picker/file_picker.dart";
-import "package:image_picker/image_picker.dart";
-import "package:permission_handler/permission_handler.dart";
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:dotted_border/dotted_border.dart';
 
-/// ===== Design Tokens (post_screen과 동일) =====
-const kAccent = Color(0xFF5BA7FF); // 포커스/포인트
+// 미리보기 화면 import
+import 'place_preview_screen.dart';
+
+// ===== 디자인 토큰 =====
+const kAccent = Color(0xFF5BA7FF);
 const kBorder = Color(0xFFE5E7EB);
 const kBorderStrong = Color(0xFFCBD5E1);
 const kPageBg = Color(0xFFFFFFFF);
@@ -20,21 +22,18 @@ const kCardBg = Color(0xFFFFFFFF);
 const kTextPrimary = Color(0xFF1F2937);
 const kTextMuted = Color(0xFF6B7280);
 
-/// 장소 CTA 버튼 색상(요청값)
 const kPlaceCtaBg = Color(0xFFAED6F1);
 const kPlaceCtaText = Color(0xFF1F2937);
 
-/// 입력 규격
 const kFieldRadius = 8.0;
 const kFieldHPad = 12.0;
 const kFieldVPad = 12.0;
 const kFieldFont = 16.0;
 const kLabelFont = 14.0;
 
-/// 포스트 화면의 카메라 플레이스홀더와 동일한 배경
 const kCameraTileBg = Color(0xFFF8FAFC);
 
-/// ===== 템플릿 삭제 방지 포매터 =====
+// ===== 템플릿 삭제 방지 포매터 =====
 class TemplateGuardFormatter extends TextInputFormatter {
   final String template;
   const TemplateGuardFormatter(this.template);
@@ -59,7 +58,7 @@ class TemplateGuardFormatter extends TextInputFormatter {
   }
 }
 
-/// ===== 장소 추천하기 =====
+// ===== 장소 추천하기 =====
 class PlaceCreateScreen extends StatefulWidget {
   const PlaceCreateScreen({super.key});
 
@@ -70,7 +69,6 @@ class PlaceCreateScreen extends StatefulWidget {
 class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  /// 장소 카테고리 (place_tab_screen과 동일 구성)
   final List<String> _categories = const [
     "전체",
     "카페",
@@ -82,11 +80,13 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
   ];
   String _selectedCategory = "카페";
 
-  // 입력 컨트롤러
   final _nameCtrl = TextEditingController();
   final _contentCtrl = TextEditingController();
 
-  // 이미지(최대 5장)
+  // 각 필드의 상태(에러 텍스트 등)를 가져오기 위한 Key
+  final _nameFieldKey = GlobalKey<FormFieldState<String>>();
+  final _contentFieldKey = GlobalKey<FormFieldState<String>>();
+
   final List<Uint8List> _images = [];
 
   bool _templateInserted = false;
@@ -113,13 +113,11 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
     super.dispose();
   }
 
-  // ===== Validators =====
   String? _required(String? v, String label) {
     if (v == null || v.trim().isEmpty) return "$label은(는) 필수 입력란입니다.";
     return null;
   }
 
-  // ===== 공통 데코레이션 =====
   InputDecoration _whiteFieldDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
@@ -128,9 +126,7 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
         fontSize: kFieldFont * 0.95,
       ),
       filled: true,
-      fillColor: MaterialStateColor.resolveWith(
-        (_) => Colors.white,
-      ), // ← 여기서 고정
+      fillColor: MaterialStateColor.resolveWith((_) => Colors.white),
       border: const OutlineInputBorder(
         borderSide: BorderSide(color: kBorder, width: 1),
         borderRadius: BorderRadius.all(Radius.circular(kFieldRadius)),
@@ -155,6 +151,30 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
         horizontal: kFieldHPad,
         vertical: kFieldVPad,
       ),
+      // 기본 에러 메시지 공간을 숨겨서, 우리가 만든 _inlineError 위젯만 보이게 함
+      errorStyle: const TextStyle(fontSize: 0, height: 0),
+    );
+  }
+
+  /// 에러 메시지를 필드 좌측 하단에 예쁘게 표시하는 위젯
+  Widget _inlineError(GlobalKey<FormFieldState<String>> key) {
+    final error = key.currentState?.errorText;
+    return SizedBox(
+      height: 18,
+      child: AnimatedOpacity(
+        opacity: error == null ? 0 : 1,
+        duration: const Duration(milliseconds: 150),
+        child: Align(
+          alignment: Alignment.centerLeft, // << 왼쪽 정렬
+          child: Padding(
+            padding: const EdgeInsets.only(top: 2.0, left: 3.0),
+            child: Text(
+              error ?? "",
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -175,7 +195,6 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
   Text _dropdownText(String s) =>
       Text(s, style: const TextStyle(fontSize: 15, color: kTextPrimary));
 
-  // ===== 템플릿 토글 =====
   void _toggleTemplate() {
     if (_templateInserted) {
       final restored = _contentBackup ?? "";
@@ -193,14 +212,15 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
     }
   }
 
-  // ===== 이미지 선택(최대 5장) =====
   Future<void> _pickImages() async {
     const maxCount = 5;
     int remain = maxCount - _images.length;
     if (remain <= 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("이미지는 최대 5장까지 등록할 수 있어요.")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("이미지는 최대 5장까지 등록할 수 있어요.")),
+        );
+      }
       return;
     }
 
@@ -226,9 +246,11 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
         status = await Permission.storage.request();
       }
       if (!status.isGranted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("사진 권한이 필요합니다.")));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("사진 권한이 필요합니다.")));
+        }
         return;
       }
 
@@ -247,7 +269,6 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
       return;
     }
 
-    // 데스크톱
     final res = await FilePicker.platform.pickFiles(
       type: FileType.image,
       allowMultiple: true,
@@ -268,21 +289,37 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
     });
   }
 
-  // ===== 제출 =====
+  void _openPreview() {
+    final previewData = {
+      "images": _images,
+      "name": _nameCtrl.text,
+      "category": _selectedCategory,
+      "content": _contentCtrl.text,
+      "templateUsed": _templateInserted,
+      "views": 0,
+      "likes": 0,
+      "isLiked": false,
+    };
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlacePreviewScreen(placeData: previewData),
+      ),
+    );
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("필수 항목을 확인해 주세요.")));
+      setState(() {});
       return;
     }
 
     final result = {
-      "images": _images, // List<Uint8List>
+      "images": _images,
       "name": _nameCtrl.text.trim(),
       "category": _selectedCategory,
       "content": _contentCtrl.text.trim(),
-      // 위치/지도는 백엔드 연동 후 채울 예정 (지금은 placeholder)
       "location": null,
       "createdAt": DateTime.now(),
     };
@@ -320,11 +357,7 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("미리보기는 추후 연결 예정입니다.")),
-              );
-            },
+            onPressed: _openPreview,
             child: const Text(
               "미리보기",
               style: TextStyle(color: kAccent, fontWeight: FontWeight.w700),
@@ -340,9 +373,8 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1) 장소 이미지 (최대 5장) - 도트 보더 + 아이콘 뒤 배경 kCameraTileBg
               _sectionLabel("장소 이미지 (최대 5장)"),
-              const SizedBox(height: 6),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 10,
                 runSpacing: 10,
@@ -352,67 +384,72 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
                       bytes: _images[i],
                       onRemove: () => _removeImage(i),
                     ),
-                  // 아이콘 아래 내부에 "0 / 5" 카운트 표시
-                  _AddImageTile(
-                    countText: "${_images.length} / 5",
-                    onTap: _pickImages,
+                  // ▼▼▼▼▼ [수정] 카메라 아이콘을 Padding으로 감싸 오른쪽으로 이동 ▼▼▼▼▼
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4.0),
+                    child: _AddImageTile(
+                      countText: "${_images.length} / 5",
+                      onTap: _pickImages,
+                    ),
                   ),
                 ],
               ),
-
               const SizedBox(height: 16),
-
-              // 2) 장소 이름
               _sectionLabel("장소 이름"),
               const SizedBox(height: 6),
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _nameCtrl,
-                      style: const TextStyle(
-                        fontSize: kFieldFont,
-                        color: kTextPrimary,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          key: _nameFieldKey,
+                          controller: _nameCtrl,
+                          style: const TextStyle(
+                            fontSize: kFieldFont,
+                            color: kTextPrimary,
+                          ),
+                          decoration: _whiteFieldDecoration(
+                            hint: "추천할 장소의 이름을 입력하세요",
+                          ),
+                          validator: (v) => _required(v, "장소 이름"),
+                        ),
                       ),
-                      decoration: _whiteFieldDecoration(
-                        hint: "추천할 장소의 이름을 입력하세요",
-                      ),
-                      validator: (v) => _required(v, "장소 이름"),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 48,
-                    width: 48,
-                    child: Material(
-                      color: const Color(0xFFF3F4F6), // 연한 배경
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(kFieldRadius),
-                        side: const BorderSide(color: kBorder, width: 1),
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(kFieldRadius),
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("장소 이름으로 검색(더미)")),
-                          );
-                        },
-                        child: const Center(
-                          child: FaIcon(
-                            FontAwesomeIcons.search,
-                            size: 18,
-                            color: Colors.black54,
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 48,
+                        width: 48,
+                        child: Material(
+                          color: const Color(0xFFF3F4F6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(kFieldRadius),
+                            side: const BorderSide(color: kBorder, width: 1),
+                          ),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(kFieldRadius),
+                            onTap: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("장소 이름으로 검색(더미)")),
+                              );
+                            },
+                            child: const Center(
+                              child: FaIcon(
+                                FontAwesomeIcons.search,
+                                size: 18,
+                                color: Colors.black54,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
+                  _inlineError(_nameFieldKey),
                 ],
               ),
-
-              const SizedBox(height: 16),
-
-              // 3) 위치 (지도 placeholder)
+              const SizedBox(height: 8),
               _sectionLabel("위치"),
               const SizedBox(height: 6),
               Container(
@@ -428,88 +465,55 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
                   style: TextStyle(color: kTextMuted),
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              // 4) 카테고리
               _sectionLabel("카테고리"),
               const SizedBox(height: 6),
-              FormField<String>(
-                initialValue: _selectedCategory,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "카테고리를 선택해 주세요.";
-                  }
-                  return null;
-                },
-                builder: (FormFieldState<String> state) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton2<String>(
-                          isExpanded: true,
-                          value: _selectedCategory,
-                          items: _categories
-                              .map(
-                                (item) => DropdownMenuItem<String>(
-                                  value: item,
-                                  child: _dropdownText(item),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => _selectedCategory = value);
-                              state.didChange(value);
-                            }
-                          },
-                          buttonStyleData: ButtonStyleData(
-                            height: 48,
-                            padding: const EdgeInsets.only(left: 0, right: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(kFieldRadius),
-                              border: Border.all(
-                                color: state.hasError ? Colors.red : kBorder,
-                              ),
-                              color: kCardBg,
-                            ),
-                          ),
-                          iconStyleData: const IconStyleData(
-                            icon: Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              color: Colors.black54,
-                            ),
-                          ),
-                          dropdownStyleData: DropdownStyleData(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(kFieldRadius),
-                              color: kCardBg,
-                            ),
-                            offset: const Offset(0, -2),
-                          ),
-                          menuItemStyleData: const MenuItemStyleData(
-                            height: 40,
-                            padding: EdgeInsets.symmetric(horizontal: 14),
-                          ),
+              DropdownButtonHideUnderline(
+                child: DropdownButton2<String>(
+                  isExpanded: true,
+                  value: _selectedCategory,
+                  items: _categories
+                      .map(
+                        (item) => DropdownMenuItem<String>(
+                          value: item,
+                          child: _dropdownText(item),
                         ),
-                      ),
-                      if (state.hasError)
-                        const Padding(
-                          padding: EdgeInsets.only(left: 12.0, top: 6.0),
-                          child: Text(
-                            "카테고리를 선택해 주세요.",
-                            style: TextStyle(color: Colors.red, fontSize: 12),
-                          ),
-                        ),
-                    ],
-                  );
-                },
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _selectedCategory = value);
+                    }
+                  },
+                  buttonStyleData: ButtonStyleData(
+                    height: 48,
+                    padding: const EdgeInsets.only(left: 0, right: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(kFieldRadius),
+                      border: Border.all(color: kBorder),
+                      color: kCardBg,
+                    ),
+                  ),
+                  iconStyleData: const IconStyleData(
+                    icon: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  dropdownStyleData: DropdownStyleData(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(kFieldRadius),
+                      color: kCardBg,
+                    ),
+                    offset: const Offset(0, -2),
+                  ),
+                  menuItemStyleData: const MenuItemStyleData(
+                    height: 40,
+                    padding: EdgeInsets.symmetric(horizontal: 14),
+                  ),
+                ),
               ),
-
               const SizedBox(height: 16),
-
-              // 5) 내용 + 질문 템플릿 버튼
               Row(
                 children: [
                   _sectionLabel("내용"),
@@ -554,35 +558,39 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
                 ],
               ),
               const SizedBox(height: 6),
-              TextFormField(
-                controller: _contentCtrl,
-                maxLines: 7,
-                style: const TextStyle(
-                  fontSize: kFieldFont,
-                  color: kTextPrimary,
-                  height: 1.4,
-                ),
-                decoration:
-                    _whiteFieldDecoration(
-                      hint: "장소에 대한 솔직한 리뷰를 남겨주세요. (예: 분위기, 가격, 꿀팁 등)",
-                    ).copyWith(
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.fromLTRB(
-                        kFieldHPad,
-                        20,
-                        kFieldHPad,
-                        8,
-                      ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    key: _contentFieldKey,
+                    controller: _contentCtrl,
+                    maxLines: 7,
+                    style: const TextStyle(
+                      fontSize: kFieldFont,
+                      color: kTextPrimary,
+                      height: 1.4,
                     ),
-                inputFormatters: _templateInserted
-                    ? [TemplateGuardFormatter(_templateText)]
-                    : const [],
-                validator: (v) => _required(v, "내용"),
+                    decoration:
+                        _whiteFieldDecoration(
+                          hint: "장소에 대한 솔직한 리뷰를 남겨주세요. (예: 분위기, 가격, 꿀팁 등)",
+                        ).copyWith(
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.fromLTRB(
+                            kFieldHPad,
+                            20,
+                            kFieldHPad,
+                            8,
+                          ),
+                        ),
+                    inputFormatters: _templateInserted
+                        ? [TemplateGuardFormatter(_templateText)]
+                        : const [],
+                    validator: (v) => _required(v, "내용"),
+                  ),
+                  _inlineError(_contentFieldKey),
+                ],
               ),
-
-              const SizedBox(height: 22),
-
-              // 6) 하단 CTA
+              const SizedBox(height: 16),
               SizedBox(
                 height: 54,
                 child: ElevatedButton(
@@ -613,7 +621,6 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
   }
 }
 
-/// ===== 이미지 타일(썸네일 + 삭제) =====
 class _ImageTile extends StatelessWidget {
   final Uint8List bytes;
   final VoidCallback onRemove;
@@ -635,13 +642,11 @@ class _ImageTile extends StatelessWidget {
             ),
           ),
         ),
-        // ⬇︎ X 버튼을 박스 "안쪽으로 살짝" 이동
         Positioned(
           right: 4,
           top: 4,
           child: IconButton(
             padding: EdgeInsets.zero,
-            // 탭 영역을 딱 떨어지게 (원형 24)
             constraints: const BoxConstraints.tightFor(width: 24, height: 24),
             onPressed: onRemove,
             icon: Container(
@@ -659,26 +664,25 @@ class _ImageTile extends StatelessWidget {
   }
 }
 
-/// ===== 추가(카메라) 타일 (도트 보더 더 촘촘 + 배경 kCameraTileBg + 아이콘 아래 카운트) =====
 class _AddImageTile extends StatelessWidget {
-  final String countText; // e.g. "0 / 5"
+  final String countText;
   final VoidCallback onTap;
   const _AddImageTile({required this.countText, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return DottedBorder(
-      dashPattern: const [1, 1], // 촘촘한 점선
-      strokeCap: StrokeCap.round, // 점처럼 보이게
+      dashPattern: const [4, 4],
+      strokeCap: StrokeCap.round,
       color: kBorderStrong,
-      strokeWidth: 2.0,
+      strokeWidth: 1.5,
       borderType: BorderType.RRect,
       radius: const Radius.circular(10),
       child: SizedBox(
         width: 72,
         height: 72,
         child: Material(
-          color: const Color.fromARGB(255, 244, 244, 244),
+          color: kCameraTileBg,
           borderRadius: BorderRadius.circular(10),
           child: InkWell(
             borderRadius: BorderRadius.circular(10),
@@ -689,12 +693,12 @@ class _AddImageTile extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.camera_alt_outlined,
-                    size: 35,
+                    size: 28,
                     color: kTextMuted,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    countText, // "0 / 5", "1 / 5" ...
+                    countText,
                     style: const TextStyle(
                       fontSize: 12,
                       color: kTextMuted,
