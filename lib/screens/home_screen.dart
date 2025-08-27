@@ -5,6 +5,7 @@ import 'chat_list_screen.dart';
 import 'dart:ui';
 import 'ask_for_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'place_tab_screen.dart'; // ★ 추가
 
 /// ===== Design Tokens (캡처 기준 색상) =====
 const kPageBg = Color(0xFFF9FAFB); // 전체 배경
@@ -29,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<String> tabs = ['추천', '모임', '구해요', '장소'];
 
   // 탭 인디케이터용
+
   late List<GlobalKey> _tabKeys;
   final GlobalKey _tabBarWrapperKey = GlobalKey(); // 부모 컨테이너 키
   double _indicatorX = 0.0;
@@ -117,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               child: Image.asset(
                 'assets/icons/main_logo.png',
-                height: 50, // 높이 조정
+                height: 50,
                 fit: BoxFit.contain,
               ),
             ),
@@ -226,6 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
           } else if (_selectedTabIndex == 1) {
             return const Center(child: Text("모임 탭 더미"));
           } else if (_selectedTabIndex == 2) {
+            // ★ 구해요 글 생성 플로팅 + 버튼
             return Stack(
               children: [
                 const AskForScreen(),
@@ -236,24 +239,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: FloatingActionButton(
                       heroTag: "askFab",
                       onPressed: () async {
-                        // ✅ AskForScreen이 등록해 둔 콜백 호출 → PostScreen 열고 결과를 리스트에 insert
                         final fn = AskForScreenController.create;
-                        if (fn != null) {
-                          await fn();
-                        }
+                        if (fn != null) await fn();
                       },
                       elevation: 4,
-                      backgroundColor: const Color.fromARGB(
-                        255,
-                        255,
-                        255,
-                        255,
-                      ), // 0xFFAED6F1
+                      backgroundColor: const Color(0xFFFFFFFF),
                       shape: const CircleBorder(),
                       child: const Icon(
                         Icons.add,
                         size: 35,
-                        color: Color.fromARGB(255, 89, 189, 247),
+                        color: Color(0xFF59BDF7),
                       ),
                     ),
                   ),
@@ -261,7 +256,34 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             );
           } else {
-            return const Center(child: Text("장소 탭 더미"));
+            // ★ 장소 글 생성 플로팅 버튼 : PlaceTabScreen + 동일 스타일의 FAB
+            return Stack(
+              children: [
+                const PlaceTabScreen(),
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: SafeArea(
+                    child: FloatingActionButton(
+                      heroTag: "placeFab",
+                      onPressed: () async {
+                        final fn = PlaceTabScreenController.create;
+                        if (fn != null)
+                          await fn(); // place_create_screen 열기 + 인서트
+                      },
+                      elevation: 4,
+                      backgroundColor: const Color(0xFFFFFFFF),
+                      shape: const CircleBorder(),
+                      child: const Icon(
+                        Icons.add,
+                        size: 35,
+                        color: Color(0xFF59BDF7),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
           }
         },
       ),
