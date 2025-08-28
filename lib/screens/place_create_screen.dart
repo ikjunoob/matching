@@ -78,7 +78,7 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
     "공원",
     "라운지",
   ];
-  String _selectedCategory = "카페";
+  String _selectedCategory = "전체";
 
   final _nameCtrl = TextEditingController();
   final _contentCtrl = TextEditingController();

@@ -1,10 +1,13 @@
-import "dart:typed_data";
-import "package:flutter/material.dart";
-import "package:font_awesome_flutter/font_awesome_flutter.dart";
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-// 공통 토큰 (임시 정의)
-import "ask_for_common.dart" as theme;
-import "place_create_screen.dart"; // ★ 장소 작성 화면
+// 공통 토큰 (임시 정의/별칭)
+import 'ask_for_common.dart' as theme;
+
+// 분리된 화면들
+import 'place_create_screen.dart';
+import 'place_preview_screen.dart';
 
 /// 홈에서 오버레이 FAB가 호출할 콜백을 보관 (구해요와 동일 패턴)
 class PlaceTabScreenController {
@@ -34,7 +37,7 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
     "라운지",
   ];
 
-  // 더미 데이터
+  // 더미 데이터 (raw 없음 → 폴백 미리보기로 처리) + 리뷰 포함
   final List<Map<String, dynamic>> _places = [
     {
       "image": null,
@@ -46,6 +49,20 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
       "likes": 77,
       "isLiked": false,
       "createdAt": DateTime.now().subtract(const Duration(days: 1, hours: 2)),
+      "reviews": [
+        {
+          "author": "홍길동",
+          "rating": 5,
+          "content": "조용하고 자리 간격이 넓어요. 밤샘 공부하기에도 괜찮습니다.",
+          "createdAt": DateTime.now().subtract(const Duration(days: 1)),
+        },
+        {
+          "author": "민지",
+          "rating": 4,
+          "content": "와이파이 빠르고 콘센트 많음. 다만 주말엔 좀 붐벼요.",
+          "createdAt": DateTime.now().subtract(const Duration(days: 2)),
+        },
+      ],
     },
     {
       "image": null,
@@ -57,6 +74,26 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
       "likes": 93,
       "isLiked": true,
       "createdAt": DateTime.now().subtract(const Duration(hours: 3)),
+      "reviews": [
+        {
+          "author": "SJ",
+          "rating": 5,
+          "content": "커피 맛있고 좌석마다 조용한 분위기라 과제하기 좋아요.",
+          "createdAt": DateTime.now().subtract(const Duration(hours: 6)),
+        },
+        {
+          "author": "은서",
+          "rating": 4,
+          "content": "2층 창가 자리 추천! 다만 시간대별로 자리 경쟁이 치열합니다.",
+          "createdAt": DateTime.now().subtract(const Duration(days: 1)),
+        },
+        {
+          "author": "준호",
+          "rating": 3,
+          "content": "콘센트 부족한 자리도 있어서 자리 운이 필요해요.",
+          "createdAt": DateTime.now().subtract(const Duration(days: 2)),
+        },
+      ],
     },
     {
       "image": null,
@@ -68,6 +105,20 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
       "likes": 62,
       "isLiked": false,
       "createdAt": DateTime.now().subtract(const Duration(days: 2)),
+      "reviews": [
+        {
+          "author": "철수",
+          "rating": 5,
+          "content": "기구가 새거 수준이고 PT 코치분들 친절합니다.",
+          "createdAt": DateTime.now().subtract(const Duration(days: 2)),
+        },
+        {
+          "author": "루나",
+          "rating": 4,
+          "content": "샤워실 깔끔. 피크 시간엔 러닝머신 대기 있음.",
+          "createdAt": DateTime.now().subtract(const Duration(days: 3)),
+        },
+      ],
     },
     {
       "image": null,
@@ -79,6 +130,14 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
       "likes": 34,
       "isLiked": false,
       "createdAt": DateTime.now().subtract(const Duration(days: 1, hours: 8)),
+      "reviews": [
+        {
+          "author": "혜린",
+          "rating": 5,
+          "content": "책이 많고 조용해서 혼자 시간 보내기 최고였어요.",
+          "createdAt": DateTime.now().subtract(const Duration(days: 1)),
+        },
+      ],
     },
     {
       "image": null,
@@ -90,6 +149,14 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
       "likes": 26,
       "isLiked": true,
       "createdAt": DateTime.now().subtract(const Duration(days: 3)),
+      "reviews": [
+        {
+          "author": "Runner",
+          "rating": 4,
+          "content": "트랙 상태 양호하고 야간 조명도 있어요.",
+          "createdAt": DateTime.now().subtract(const Duration(days: 3)),
+        },
+      ],
     },
   ];
 
@@ -117,11 +184,13 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
     if (!mounted) return;
 
     if (result != null) {
-      // place_create_screen.dart의 반환 맵을 카드 포맷으로 변환
       final List images = (result["images"] is List)
           ? result["images"]
           : const [];
-      final firstImage = images.isNotEmpty ? images.first as Uint8List : null;
+      final Uint8List? firstImage =
+          images.isNotEmpty && images.first is Uint8List
+          ? images.first as Uint8List
+          : null;
 
       setState(() {
         _places.insert(0, {
@@ -129,13 +198,15 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
           "title": (result["name"] ?? "").toString().trim().isEmpty
               ? "제목 없음"
               : result["name"],
-          "address": "", // 지도 연동 전이므로 비워둠
+          "address": "",
           "category": result["category"] ?? "기타",
           "comments": 0,
           "views": 0,
           "likes": 0,
-          "isLiked": false,
+          "isLiked": result["isLiked"] ?? false,
           "createdAt": DateTime.now(),
+          "reviews": <Map<String, dynamic>>[], // 신규 등록은 빈 리뷰로 시작
+          "raw": result, // 상세에서 사용할 원본
         });
       });
 
@@ -152,7 +223,7 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
 
     final sorted = [...filtered];
     switch (_selectedSort) {
-      case "인기순": // 조회수 기준
+      case "인기순":
         sorted.sort((a, b) => (b["views"] as int).compareTo(a["views"] as int));
         break;
       case "최신순":
@@ -174,7 +245,63 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
       final liked = _places[originalIndex]["isLiked"] == true;
       _places[originalIndex]["isLiked"] = !liked;
       _places[originalIndex]["likes"] += liked ? -1 : 1;
+      if (_places[originalIndex]["likes"] < 0) {
+        _places[originalIndex]["likes"] = 0;
+      }
     });
+  }
+
+  Future<void> _openPreview(Map<String, dynamic> cardData) async {
+    // raw 가 있으면 그대로, 없으면 카드 데이터로 폴백
+    final Map<String, dynamic> placeData =
+        (cardData["raw"] is Map<String, dynamic>)
+        ? Map<String, dynamic>.from(cardData["raw"])
+        : {
+            "images": <Uint8List>[],
+            "name": (cardData["title"] ?? "장소 이름"),
+            "category": (cardData["category"] ?? "기타"),
+            "content": "",
+            "templateUsed": false,
+          };
+
+    // ✅ 리스트 메타 값도 상세로 전달
+    placeData["isLiked"] = cardData["isLiked"] ?? false;
+    placeData["views"] = cardData["views"] ?? 0;
+    placeData["likes"] = cardData["likes"] ?? 0;
+    placeData["comments"] = cardData["comments"] ?? 0;
+
+    // 리뷰 전달
+    placeData["reviews"] = (cardData["reviews"] is List)
+        ? List<Map<String, dynamic>>.from(
+            (cardData["reviews"] as List).whereType<Map>(),
+          )
+        : <Map<String, dynamic>>[];
+
+    // ✅ 상세에서 수정된 메타/리뷰 결과 받기
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlacePreviewScreen(placeData: placeData),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (result != null) {
+      setState(() {
+        // cardData는 _places 안의 맵과 동일 참조(가공 리스트지만 요소는 동일 참조)
+        if (result["reviews"] is List) {
+          cardData["reviews"] = List<Map<String, dynamic>>.from(
+            (result["reviews"] as List).whereType<Map>(),
+          );
+          cardData["comments"] =
+              result["comments"] ?? (cardData["reviews"] as List).length;
+        }
+        if (result["likes"] is int) cardData["likes"] = result["likes"];
+        if (result["isLiked"] is bool) cardData["isLiked"] = result["isLiked"];
+        if (result["views"] is int) cardData["views"] = result["views"];
+      });
+    }
   }
 
   @override
@@ -206,6 +333,7 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
                 return PlaceListCard(
                   data: item,
                   onLikeTap: () => _toggleLike(idx),
+                  onTap: () => _openPreview(item),
                 );
               },
             ),
@@ -302,10 +430,7 @@ class _SortAndCategoryBar extends StatelessWidget {
   }
 }
 
-// ================================================================
-// ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 기존 _CategoryChipMenu를 아래 위젯들로 교체 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-// ================================================================
-
+/// 카테고리 칩 메뉴 (간단 버전)
 class _CategoryChipMenu extends StatelessWidget {
   final String label;
   final List<String> items;
@@ -319,7 +444,6 @@ class _CategoryChipMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // scale 변수들을 상수로 정의
     const double scale = 1.0;
     const double chipRadius = 14.0 * scale;
     const double chipHPad = 10.0 * scale;
@@ -328,7 +452,6 @@ class _CategoryChipMenu extends StatelessWidget {
     const double iconSize = 14.0 * scale;
     const double menuItemHeight = 40.0 * scale;
     const double menuFontSize = 15.0 * scale;
-    // 요청에 따라 너비를 160으로 고정
     const double maxMenuWidth = 160.0;
     const Color accentColor = Color.fromARGB(255, 88, 188, 255);
 
@@ -359,25 +482,25 @@ class _CategoryChipMenu extends StatelessWidget {
           color: theme.kWhite,
           elevation: 1,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          // 너비를 160으로 고정
           constraints: const BoxConstraints(
             minWidth: maxMenuWidth,
             maxWidth: maxMenuWidth,
           ),
-          items: items.map((e) {
-            final isSel = e == label;
-            return PopupMenuItem<String>(
-              value: e,
-              height: menuItemHeight,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: _HoverMenuTile(
-                text: e,
-                isSelected: isSel,
-                accent: accentColor,
-                fontSize: menuFontSize,
-              ),
-            );
-          }).toList(),
+          items: items
+              .map(
+                (e) => PopupMenuItem<String>(
+                  value: e,
+                  height: menuItemHeight,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: _HoverMenuTile(
+                    text: e,
+                    isSelected: e == label,
+                    accent: accentColor,
+                    fontSize: menuFontSize,
+                  ),
+                ),
+              )
+              .toList(),
         );
         if (selected != null) onSelected(selected);
       },
@@ -385,7 +508,6 @@ class _CategoryChipMenu extends StatelessWidget {
   }
 }
 
-/// 드롭다운 메뉴의 각 항목을 위한 위젯 (호버/탭 상태 관리)
 class _HoverMenuTile extends StatefulWidget {
   final String text;
   final bool isSelected;
@@ -465,7 +587,6 @@ class _HoverMenuTileState extends State<_HoverMenuTile> {
   }
 }
 
-/// 드롭다운 메뉴를 여는 칩 모양 버튼 위젯
 class _ChipButton extends StatelessWidget {
   final String label;
   final double radius, hPad, vPad, fontSize, iconSize;
@@ -518,9 +639,9 @@ class _ChipButton extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 4 * (fontSize / 12.0)),
-                  FaIcon(
+                  const FaIcon(
                     FontAwesomeIcons.chevronDown,
-                    size: iconSize,
+                    size: 14,
                     color: theme.kTextPrimary,
                   ),
                 ],
@@ -537,8 +658,14 @@ class _ChipButton extends StatelessWidget {
 class PlaceListCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final VoidCallback onLikeTap;
+  final VoidCallback? onTap;
 
-  const PlaceListCard({super.key, required this.data, required this.onLikeTap});
+  const PlaceListCard({
+    super.key,
+    required this.data,
+    required this.onLikeTap,
+    this.onTap,
+  });
 
   Widget _thumb() {
     final img = data["image"];
@@ -586,148 +713,149 @@ class PlaceListCard extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Container(
-        padding: const EdgeInsets.all(theme.kCardPad),
-        decoration: BoxDecoration(
-          color: theme.kWhite,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _thumb(),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 제목 + 하트(우상단)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          data["title"] ?? "제목 없음",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: theme.kTextPrimary,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 14,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(theme.kCardPad),
+          decoration: BoxDecoration(
+            color: theme.kWhite,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _thumb(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 제목 + 하트(우상단)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            data["title"] ?? "제목 없음",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: theme.kTextPrimary,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: onLikeTap,
-                        child: FaIcon(
-                          liked
-                              ? FontAwesomeIcons.solidHeart
-                              : FontAwesomeIcons.heart,
-                          size: 20,
-                          color: liked ? theme.kHeartRed : theme.kHeartGrey,
+                        GestureDetector(
+                          onTap: onLikeTap,
+                          child: FaIcon(
+                            liked
+                                ? FontAwesomeIcons.solidHeart
+                                : FontAwesomeIcons.heart,
+                            size: 20,
+                            color: liked ? theme.kHeartRed : theme.kHeartGrey,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    data["address"] ?? "",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: theme.kTextMuted,
-                      fontSize: 12.5,
+                      ],
                     ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // === 메타(좌) + 카테고리 칩(우) 한 줄 ===
-                  Row(
-                    children: [
-                      // 메타: 댓글 → 조회 → 하트
-                      Expanded(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const FaIcon(
-                              FontAwesomeIcons.solidCommentDots,
-                              size: 13,
-                              color: theme.kTextMuted,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "${data["comments"] ?? 0}",
-                              style: const TextStyle(
-                                fontSize: 11,
+                    const SizedBox(height: 4),
+                    Text(
+                      data["address"] ?? "",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: theme.kTextMuted,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    // === 메타(좌) + 카테고리 칩(우) 한 줄 ===
+                    Row(
+                      children: [
+                        // 메타
+                        Expanded(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const FaIcon(
+                                FontAwesomeIcons.solidCommentDots,
+                                size: 13,
                                 color: theme.kTextMuted,
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            const FaIcon(
-                              FontAwesomeIcons.solidEye,
-                              size: 13,
-                              color: theme.kTextMuted,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "${data["views"] ?? 0}",
-                              style: const TextStyle(
-                                fontSize: 11,
+                              const SizedBox(width: 4),
+                              Text(
+                                "${data["comments"] ?? 0}",
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: theme.kTextMuted,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const FaIcon(
+                                FontAwesomeIcons.solidEye,
+                                size: 13,
                                 color: theme.kTextMuted,
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            const FaIcon(
-                              FontAwesomeIcons.solidHeart,
-                              size: 13,
-                              color: theme.kHeartRed,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "${data["likes"] ?? 0}",
-                              style: const TextStyle(
-                                fontSize: 11,
+                              const SizedBox(width: 4),
+                              Text(
+                                "${data["views"] ?? 0}",
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: theme.kTextMuted,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const FaIcon(
+                                FontAwesomeIcons.solidHeart,
+                                size: 13,
                                 color: theme.kHeartRed,
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // 카테고리 칩 (우측 정렬)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: theme.kDivider),
-                        ),
-                        child: Text(
-                          category,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: theme.kTextPrimary,
-                            fontWeight: FontWeight.w600,
+                              const SizedBox(width: 4),
+                              Text(
+                                "${data["likes"] ?? 0}",
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: theme.kHeartRed,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        // 카테고리 칩
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: theme.kDivider),
+                          ),
+                          child: Text(
+                            category,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: theme.kTextPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

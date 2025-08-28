@@ -15,7 +15,7 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = const Color(0xFFAED6F1);
+    final accentColor = const Color(0xFF5DADE2);
     const navBarHeight = 56.0;
     const floatingSize = 64.0;
 
@@ -59,8 +59,14 @@ class CustomBottomNavBar extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Center(
-                    child: Icon(Icons.podcasts, color: Colors.black, size: 30),
+                  // [수정] Center를 Transform.translate로 변경하여 위치 보정
+                  child: Transform.translate(
+                    offset: const Offset(0, 2.0), // Y축으로 -2만큼 살짝 위로 이동
+                    child: const Icon(
+                      FontAwesomeIcons.towerBroadcast,
+                      color: Colors.white,
+                      size: 30,
+                    ),
                   ),
                 ),
               ),
@@ -76,14 +82,12 @@ class CustomBottomNavBar extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // 홈 (FontAwesome home)
                   _NavBarIcon(
                     icon: FontAwesomeIcons.home,
                     isActive: currentIndex == 0,
                     onTap: () => onTap(0),
-                    size: 26,
+                    size: 23,
                   ),
-                  // 모임/커뮤니티 (Material diversity_3)
                   _NavBarIcon(
                     icon: Icons.diversity_3,
                     isActive: currentIndex == 1,
@@ -91,19 +95,17 @@ class CustomBottomNavBar extends StatelessWidget {
                     size: 28,
                   ),
                   const Expanded(child: SizedBox()),
-                  // 시간표/캘린더 (FontAwesome calendar-alt)
                   _NavBarIcon(
                     icon: FontAwesomeIcons.calendarAlt,
                     isActive: currentIndex == 3,
                     onTap: () => onTap(3),
                     size: 24,
                   ),
-                  // 마이페이지 (FontAwesome user-circle)
                   _NavBarIcon(
                     icon: FontAwesomeIcons.userCircle,
                     isActive: currentIndex == 4,
                     onTap: () => onTap(4),
-                    size: 28,
+                    size: 26,
                   ),
                 ],
               ),
