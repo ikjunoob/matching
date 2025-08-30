@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 /// ===== Design Tokens =====
 // 포커스/액센트(텍스트필드 포커스 보더 등): #67E8F9
-const kAccent = Color(0xFFAED6F1);
+const kAccent = Color(0xFF5DADE2);
 
 // 주요 텍스트: #1F2937
 const kTextPrimary = Color(0xFF1F2937);
@@ -12,7 +12,7 @@ const kTextPrimary = Color(0xFF1F2937);
 const kTextMuted = Color(0xFF6B7280);
 
 // 페이지 배경
-const kPageBg = Color(0xFFF9FAFB);
+const kPageBg = Color.fromARGB(255, 255, 255, 255);
 
 // 얇은 구분선: #E5E7EB
 const kDivider = Color(0xFFE5E7EB);

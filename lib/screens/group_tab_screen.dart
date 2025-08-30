@@ -1,16 +1,20 @@
-// group_tab_screen.dart
 import 'dart:typed_data';
+import 'package:flutter/gestures.dart'; // ScrollBehavior를 위해 추가
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'work_space.dart'; // 리스트 클릭 -> 워크스페이스 화면 이동
 import 'ask_for_common.dart' as theme; // 공통 토큰(색상/패딩/썸네일 사이즈 등)
+import 'group_create_screen.dart'; // 모임 생성 화면
 
 /// 홈의 FAB가 호출할 콜백을 보관
 class GroupTabScreenController {
   static Future<void> Function()? create;
 }
 
-/// 모임 탭
+/// 상단 탭
+enum GroupTab { recommend, popular, regular, newest }
+
 class GroupTabScreen extends StatefulWidget {
   const GroupTabScreen({super.key});
 
@@ -19,9 +23,10 @@ class GroupTabScreen extends StatefulWidget {
 }
 
 class _GroupTabScreenState extends State<GroupTabScreen> {
-  // 정렬(인기→최신→좋아요) + 카테고리(예시)
-  String _selectedSort = "인기순";
-  String _selectedCategory = "전체";
+  // ===== 상태 =====
+  GroupTab _tab = GroupTab.regular; // 추천/인기/정규/신규
+  String _selectedCategory = "전체"; // 카테고리
+  int _selectedWeekday = 3; // 정규 요일: 0=전체, 1=월..7=일
 
   // 카테고리 목록
   final List<String> _categories = const [
@@ -34,7 +39,10 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
     "문화",
   ];
 
-  // ===== 더미 데이터 (이미지 URL은 Unsplash) =====
+  // ===== 더미 데이터 =====
+  // - weekday: 1=월..7=일 (정규모임 요일)
+  // - isRegular: 정규모임 여부
+  // - createdAt: 게시 생성일(신규 정렬용)
   final List<Map<String, dynamic>> _groups = [
     {
       "image":
@@ -47,10 +55,12 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "likes": 164,
       "isLiked": true,
       "createdAt": DateTime.now().subtract(const Duration(hours: 2)),
+      "isRegular": true,
+      "weekday": 3, // 수
     },
     {
       "image":
-          "https://images.unsplash.com/photo-1514517220031-65f23f5a1f1c?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
       "title": "한강에서 치맥 #20",
       "tags": ["친목", "야외"],
       "category": "친목",
@@ -59,6 +69,8 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "likes": 152,
       "isLiked": false,
       "createdAt": DateTime.now().subtract(const Duration(days: 1)),
+      "isRegular": true,
+      "weekday": 6, // 토
     },
     {
       "image":
@@ -71,10 +83,12 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "likes": 162,
       "isLiked": false,
       "createdAt": DateTime.now().subtract(const Duration(days: 1, hours: 3)),
+      "isRegular": true,
+      "weekday": 2, // 화
     },
     {
       "image":
-          "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1549880338-65ddcdfd017b?auto=format&fit=crop&w=1200&q=80",
       "title": "주말 등산 모임 #38",
       "tags": ["운동", "친목"],
       "category": "운동",
@@ -83,10 +97,12 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "likes": 129,
       "isLiked": false,
       "createdAt": DateTime.now().subtract(const Duration(days: 2)),
+      "isRegular": true,
+      "weekday": 7, // 일
     },
     {
       "image":
-          "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=crop&w=1200&q=80",
       "title": "보드게임 할 사람 #27",
       "tags": ["게임", "친목"],
       "category": "게임",
@@ -95,6 +111,50 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "likes": 95,
       "isLiked": true,
       "createdAt": DateTime.now().subtract(const Duration(days: 3)),
+      "isRegular": true,
+      "weekday": 5, // 금
+    },
+    {
+      "image":
+          "https://images.unsplash.com/photo-1529070538774-1843cb3265df?auto=format&fit=crop&w=1200&q=80",
+      "title": "영화 감상회 #15",
+      "tags": ["문화", "영화"],
+      "category": "문화",
+      "comments": 18,
+      "views": 198,
+      "likes": 86,
+      "isLiked": false,
+      "createdAt": DateTime.now().subtract(const Duration(hours: 7)),
+      "isRegular": false, // 단발/수시
+      "weekday": 4, // 참고용
+    },
+    {
+      "image":
+          "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?auto=format&fit=crop&w=1200&q=80",
+      "title": "맛집 탐방 #9",
+      "tags": ["맛집탐방", "한식"],
+      "category": "맛집탐방",
+      "comments": 11,
+      "views": 165,
+      "likes": 77,
+      "isLiked": false,
+      "createdAt": DateTime.now().subtract(const Duration(hours: 1)),
+      "isRegular": true,
+      "weekday": 4, // 목
+    },
+    {
+      "image":
+          "https://images.unsplash.com/photo-1512654448050-44b3700c42fa?auto=format&fit=crop&w=1200&q=80",
+      "title": "카페 스터디 #18",
+      "tags": ["스터디", "카페"],
+      "category": "스터디",
+      "comments": 15,
+      "views": 172,
+      "likes": 81,
+      "isLiked": false,
+      "createdAt": DateTime.now().subtract(const Duration(days: 4)),
+      "isRegular": true,
+      "weekday": 1, // 월
     },
   ];
 
@@ -124,29 +184,27 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
     );
   }
 
-  // (임시) 모임 생성 화면 연결 자리: 지금은 스텁 바텀시트로 더미 추가
+  // FAB -> 생성 화면 -> 결과를 리스트에 삽입
   Future<void> _openCreateAndAppend() async {
-    final result = await showModalBottomSheet<Map<String, dynamic>>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => const _CreateGroupStub(),
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(builder: (_) => const GroupCreateScreen()),
     );
-
     if (!mounted || result == null) return;
 
     setState(() {
       _groups.insert(0, {
         "image": result["image"],
         "title": result["title"],
-        "tags": result["tags"],
-        "category": result["category"],
+        "tags": result["tags"] ?? const <String>[],
+        "category": result["category"] ?? "기타",
         "comments": 0,
         "views": 0,
         "likes": 0,
         "isLiked": false,
         "createdAt": DateTime.now(),
+        "isRegular": result["isRegular"] ?? true,
+        "weekday": result["weekday"] ?? 6, // 토
         "raw": result,
       });
     });
@@ -156,28 +214,56 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
     ).showSnackBar(const SnackBar(content: Text("모임이 등록되었습니다.")));
   }
 
-  List<Map<String, dynamic>> _applySortAndFilter() {
-    final filtered = _selectedCategory == "전체"
+  // ===== 탭/카테고리/요일 적용 후 정렬 =====
+  List<Map<String, dynamic>> _applyTabSortFilter() {
+    // 1) 카테고리 필터
+    Iterable<Map<String, dynamic>> list = _selectedCategory == "전체"
         ? _groups
-        : _groups.where((g) => g["category"] == _selectedCategory).toList();
+        : _groups.where((g) => g["category"] == _selectedCategory);
 
-    final sorted = [...filtered];
-    switch (_selectedSort) {
-      case "인기순":
+    // 2) 탭/요일 필터 + 정렬
+    switch (_tab) {
+      case GroupTab.recommend:
+        // 간단 추천 점수: likes*2 + views
+        final sorted = [...list];
+        sorted.sort((a, b) {
+          int sa = (a["likes"] as int) * 2 + (a["views"] as int);
+          int sb = (b["likes"] as int) * 2 + (b["views"] as int);
+          return sb.compareTo(sa);
+        });
+        return sorted;
+
+      case GroupTab.popular:
+        final sorted = [...list];
         sorted.sort((a, b) => (b["views"] as int).compareTo(a["views"] as int));
-        break;
-      case "최신순":
+        return sorted;
+
+      case GroupTab.regular:
+        list = list.where((g) => g["isRegular"] == true);
+        if (_selectedWeekday != 0) {
+          list = list.where((g) => g["weekday"] == _selectedWeekday);
+        }
+        // 정렬: 요일(월→일), 동일 요일이면 좋아요/조회수 가벼운 가중치
+        final sorted = [...list];
+        sorted.sort((a, b) {
+          final wa = (a["weekday"] as int);
+          final wb = (b["weekday"] as int);
+          if (wa != wb) return wa.compareTo(wb);
+          final sa = (a["likes"] as int) * 2 + (a["views"] as int);
+          final sb = (b["likes"] as int) * 2 + (b["views"] as int);
+          return sb.compareTo(sa);
+        });
+        return sorted;
+
+      case GroupTab.newest:
+        final sorted = [...list];
         sorted.sort(
           (a, b) => (b["createdAt"] as DateTime).compareTo(
             a["createdAt"] as DateTime,
           ),
         );
-        break;
-      case "좋아요순":
-        sorted.sort((a, b) => (b["likes"] as int).compareTo(a["likes"] as int));
-        break;
+        return sorted;
     }
-    return sorted;
   }
 
   void _toggleLike(int originalIndex) {
@@ -193,19 +279,28 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final visible = _applySortAndFilter();
+    final visible = _applyTabSortFilter();
 
     return Scaffold(
       backgroundColor: theme.kPageBg,
       body: Column(
         children: [
-          _SortAndCategoryBar(
-            selectedSort: _selectedSort,
-            onChangeSort: (v) => setState(() => _selectedSort = v),
+          // 상단 탭/필터 바
+          _TopFilterBar(
+            tab: _tab,
+            onChangeTab: (t) => setState(() => _tab = t),
             selectedCategory: _selectedCategory,
             onChangeCategory: (v) => setState(() => _selectedCategory = v),
             categories: _categories,
           ),
+
+          // 정규 탭일 때만 요일 필터 노출
+          if (_tab == GroupTab.regular)
+            _WeekdayFilterBar(
+              selected: _selectedWeekday,
+              onSelected: (d) => setState(() => _selectedWeekday = d),
+            ),
+
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.only(bottom: 140),
@@ -231,17 +326,17 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
   }
 }
 
-/// ================= 공통 상단 바(정렬 칩 + 카테고리 칩) =================
-class _SortAndCategoryBar extends StatelessWidget {
-  final String selectedSort;
-  final ValueChanged<String> onChangeSort;
+/// ================= 상단: 탭(추천/인기/정규/신규) + 카테고리칩 =================
+class _TopFilterBar extends StatelessWidget {
+  final GroupTab tab;
+  final ValueChanged<GroupTab> onChangeTab;
   final String selectedCategory;
   final ValueChanged<String> onChangeCategory;
   final List<String> categories;
 
-  const _SortAndCategoryBar({
-    required this.selectedSort,
-    required this.onChangeSort,
+  const _TopFilterBar({
+    required this.tab,
+    required this.onChangeTab,
     required this.selectedCategory,
     required this.onChangeCategory,
     required this.categories,
@@ -249,13 +344,53 @@ class _SortAndCategoryBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const sorts = ["인기순", "최신순", "좋아요순"];
-    const scale = 1.0;
-    final chipR = 14.0 * scale, hPad = 10.0 * scale, vPad = 6.0 * scale;
+    const double scale = 1.0;
+    final chipR = 18.0 * scale; // 둥근 모서리
+    final hPad = 12.0 * scale;
+    final vPad = 8.0 * scale;
+
+    final tabs = <(String, GroupTab)>[
+      ("추천", GroupTab.recommend),
+      ("인기", GroupTab.popular),
+      ("정규", GroupTab.regular),
+      ("신규", GroupTab.newest),
+    ];
+
+    Widget buildChip(String label, bool sel, VoidCallback onTap) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(chipR),
+          onTap: onTap,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+            decoration: BoxDecoration(
+              color: sel ? const Color(0xFF1F2937) : theme.kWhite,
+              borderRadius: BorderRadius.circular(chipR),
+              border: Border.all(
+                color: sel ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB),
+              ),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13 * scale,
+                height: 1.1,
+                color: sel ? theme.kWhite : theme.kTextPrimary,
+                fontWeight: sel ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10 * scale),
+      // 높이 살짝 축소
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
         color: theme.kWhite,
         border: Border(bottom: BorderSide(color: theme.kDivider, width: 1)),
@@ -263,57 +398,213 @@ class _SortAndCategoryBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // 좌: 탭 칩들
           Row(
-            children: sorts.map((s) {
-              final sel = s == selectedSort;
-              return Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(chipR),
-                  onTap: () => onChangeSort(s),
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: hPad,
-                      vertical: vPad,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.kWhite,
-                      borderRadius: BorderRadius.circular(chipR),
-                      border: Border.all(
-                        color: sel
-                            ? theme.kTextPrimary
-                            : const Color(0xFFD3D3D3),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(sel ? 0.08 : 0.03),
-                          blurRadius: sel ? 6 : 3,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      s,
-                      style: TextStyle(
-                        fontSize: 12 * scale,
-                        height: 1.1,
-                        color: theme.kTextPrimary,
-                        fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+            children: tabs
+                .map(
+                  (e) => buildChip(e.$1, tab == e.$2, () => onChangeTab(e.$2)),
+                )
+                .toList(),
           ),
+          // 우: 카테고리 드롭다운 칩  (선택 텍스트 + 아이콘)
           _CategoryChipMenu(
             label: selectedCategory,
             items: categories,
             onSelected: onChangeCategory,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// ================= 정규 탭 전용: 슬라이딩 애니메이션 요일 필터 =================
+
+// 스크롤바를 숨기기 위한 사용자 정의 ScrollBehavior
+class NoScrollbarBehavior extends ScrollBehavior {
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child; // 스크롤바를 그리지 않고 자식 위젯만 반환
+  }
+}
+
+class _WeekdayFilterBar extends StatefulWidget {
+  final int selected;
+  final ValueChanged<int> onSelected;
+
+  const _WeekdayFilterBar({
+    super.key,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  State<_WeekdayFilterBar> createState() => _WeekdayFilterBarState();
+}
+
+class _WeekdayFilterBarState extends State<_WeekdayFilterBar> {
+  // 높이/패딩 조절 상수 (전체 높이 살짝 감소)
+  static const double _trackHPad = 15.0; // 트랙 좌우 여백 ↑ (오버플로 방지)
+  static const double _trackVPad = 3.0; // 트랙 상하 여백 ↓
+  static const double _itemHPad = 13.0; // 아이템 좌우 여백(기존 16)
+  static const double _itemVPad = 10.0; // 아이템 상하 여백(기존 8)
+  static const double _fontSize = 14.0; // 폰트(기존 13)
+
+  final List<(String, int)> options = const [
+    ("전체", 0),
+    ("월", 1),
+    ("화", 2),
+    ("수", 3),
+    ("목", 4),
+    ("금", 5),
+    ("토", 6),
+    ("일", 7),
+  ];
+
+  final List<GlobalKey> _keys = [];
+  final List<double> _widths = [];
+  double _indicatorWidth = 0;
+  double _indicatorLeft = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _keys.addAll(List.generate(options.length, (_) => GlobalKey()));
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _measureItems();
+      _updateIndicator(widget.selected, animate: false);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _WeekdayFilterBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selected != widget.selected) {
+      if (_widths.isNotEmpty) {
+        _updateIndicator(widget.selected);
+      }
+    }
+  }
+
+  void _measureItems() {
+    _widths.clear();
+    for (var key in _keys) {
+      final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        _widths.add(renderBox.size.width);
+      } else {
+        _widths.add(0);
+      }
+    }
+  }
+
+  void _updateIndicator(int value, {bool animate = true}) {
+    final selectedIndex = options.indexWhere((opt) => opt.$2 == value);
+    if (selectedIndex == -1 || selectedIndex >= _widths.length) return;
+
+    // ⚠️ 컨테이너 패딩을 더하지 않는다. (Stack 좌표계는 Row와 동일)
+    double left = 0;
+    for (int i = 0; i < selectedIndex; i++) {
+      left += _widths[i];
+    }
+
+    if (mounted) {
+      setState(() {
+        _indicatorWidth = _widths[selectedIndex];
+        _indicatorLeft = left;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: theme.kWhite,
+      // 바깥 여백 살짝 축소
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: ScrollConfiguration(
+        behavior: NoScrollbarBehavior(),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Container(
+            // 트랙에 좌우 패딩을 주어 끝이 잘리지 않게
+            padding: const EdgeInsets.symmetric(
+              horizontal: _trackHPad,
+              vertical: _trackVPad,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: IntrinsicWidth(
+              child: Stack(
+                children: [
+                  // 선택 인디케이터
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    left: _indicatorLeft,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: _indicatorWidth,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // 요일 텍스트들
+                  Row(
+                    children: options.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final option = entry.value;
+                      final isSelected = widget.selected == option.$2;
+
+                      return GestureDetector(
+                        key: _keys[index],
+                        onTap: () => widget.onSelected(option.$2),
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: _itemHPad,
+                            vertical: _itemVPad,
+                          ),
+                          child: Text(
+                            option.$1,
+                            style: TextStyle(
+                              fontSize: _fontSize,
+                              height: 1.1,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? const Color(0xFF1F2937)
+                                  : const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -333,10 +624,10 @@ class _CategoryChipMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const double scale = 1.0;
-    const double chipRadius = 14.0 * scale;
-    const double chipHPad = 10.0 * scale;
-    const double chipVPad = 6.0 * scale;
-    const double fontSize = 12.0 * scale;
+    const double chipRadius = 18.0 * scale;
+    const double chipHPad = 12.0 * scale;
+    const double chipVPad = 8.0 * scale;
+    const double fontSize = 13.0 * scale;
     const double iconSize = 14.0 * scale;
     const double menuItemHeight = 40.0 * scale;
     const double menuFontSize = 15.0 * scale;
@@ -512,7 +803,7 @@ class _ChipButton extends StatelessWidget {
               decoration: BoxDecoration(
                 color: theme.kWhite,
                 borderRadius: BorderRadius.circular(radius),
-                border: Border.all(color: theme.kDivider),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -523,10 +814,10 @@ class _ChipButton extends StatelessWidget {
                       fontSize: fontSize,
                       height: 1.1,
                       color: theme.kTextPrimary,
-                      fontWeight: FontWeight.w300,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(width: 4 * (fontSize / 12.0)),
+                  SizedBox(width: 4 * (fontSize / 13.0)),
                   const FaIcon(
                     FontAwesomeIcons.chevronDown,
                     size: 14,
@@ -669,7 +960,7 @@ class GroupListCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    // 태그 라인(Place의 주소 라인 자리)
+                    // 태그 라인
                     Text(
                       _tagsLine(),
                       maxLines: 1,
@@ -757,85 +1048,6 @@ class GroupListCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// ===== 임시 생성 스텁(연결 전까지 사용) =====
-class _CreateGroupStub extends StatelessWidget {
-  const _CreateGroupStub();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-            const Text(
-              "모임 만들기 (스텁)",
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
-                color: theme.kTextPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              "실제 생성 화면 연결 전까지 임시로 더미 모임을 추가합니다.",
-              style: TextStyle(color: theme.kTextMuted),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5BA7FF),
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: () {
-                  Navigator.pop<Map<String, dynamic>>(context, {
-                    "image":
-                        "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
-                    "title": "새로운 모임 제목",
-                    "tags": ["친목", "자기계발"],
-                    "category": "친목",
-                  });
-                },
-                child: const Text(
-                  "더미 모임 추가",
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                "취소",
-                style: TextStyle(color: theme.kTextPrimary),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
         ),
       ),
     );
