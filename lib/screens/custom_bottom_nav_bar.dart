@@ -65,7 +65,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     child: const Icon(
                       FontAwesomeIcons.towerBroadcast,
                       color: Colors.white,
-                      size: 30,
+                      size: 28,
                     ),
                   ),
                 ),
@@ -102,7 +102,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     size: 24,
                   ),
                   _NavBarIcon(
-                    icon: FontAwesomeIcons.userCircle,
+                    icon: FontAwesomeIcons.solidUserCircle,
                     isActive: currentIndex == 4,
                     onTap: () => onTap(4),
                     size: 26,

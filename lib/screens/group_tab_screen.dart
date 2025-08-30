@@ -1,265 +1,165 @@
-// place_tab_screen.dart
+// group_tab_screen.dart
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'work_space.dart'; // 리스트 클릭 -> 워크스페이스 화면 이동
+import 'ask_for_common.dart' as theme; // 공통 토큰(색상/패딩/썸네일 사이즈 등)
 
-// 공통 토큰 (임시 정의/별칭)
-import 'ask_for_common.dart' as theme;
-
-// 분리된 화면들
-import 'place_create_screen.dart';
-import 'place_preview_screen.dart';
-
-/// 홈에서 오버레이 FAB가 호출할 콜백을 보관 (구해요와 동일 패턴)
-class PlaceTabScreenController {
+/// 홈의 FAB가 호출할 콜백을 보관
+class GroupTabScreenController {
   static Future<void> Function()? create;
 }
 
-/// 장소 탭 전용 화면
-class PlaceTabScreen extends StatefulWidget {
-  const PlaceTabScreen({super.key});
+/// 모임 탭
+class GroupTabScreen extends StatefulWidget {
+  const GroupTabScreen({super.key});
+
   @override
-  State<PlaceTabScreen> createState() => _PlaceTabScreenState();
+  State<GroupTabScreen> createState() => _GroupTabScreenState();
 }
 
-class _PlaceTabScreenState extends State<PlaceTabScreen> {
-  // 요구 순서: 인기순 → 최신순 → 좋아요순
+class _GroupTabScreenState extends State<GroupTabScreen> {
+  // 정렬(인기→최신→좋아요) + 카테고리(예시)
   String _selectedSort = "인기순";
   String _selectedCategory = "전체";
 
-  // 장소용 카테고리 6개 (+전체)
+  // 카테고리 목록
   final List<String> _categories = const [
     "전체",
-    "카페",
-    "스터디룸",
-    "운동시설",
-    "도서관",
-    "공원",
-    "라운지",
+    "운동",
+    "스터디",
+    "맛집탐방",
+    "게임",
+    "친목",
+    "문화",
   ];
 
-  /// 제목(seed) 기반으로 안정적으로 선택되는 더미 주소
-  String _pickDummyAddress(String seed) {
-    const samples = [
-      '서울특별시 강남구 테헤란로 123',
-      '서울특별시 관악구 대학동 11-1',
-      '서울특별시 마포구 양화로 45',
-      '경기도 성남시 분당구 판교역로 235',
-      '부산광역시 해운대구 센텀중앙로 55',
-      '대구광역시 수성구 달구벌대로 1234',
-      '광주광역시 북구 첨단과기로 99',
-      '대전광역시 유성구 대학로 291',
-      '인천광역시 연수구 송도과학로 16',
-      '제주특별자치도 제주시 첨단로 242',
-    ];
-    final s = (seed.trim().isEmpty
-        ? DateTime.now().millisecondsSinceEpoch
-        : seed.hashCode);
-    final idx = s.abs() % samples.length;
-    return samples[idx];
-  }
-
-  // 더미 데이터 (raw 없음 → 폴백 미리보기로 처리) + 무료 이미지 URL(Unsplash)로 교체
-  final List<Map<String, dynamic>> _places = [
+  // ===== 더미 데이터 (이미지 URL은 Unsplash) =====
+  final List<Map<String, dynamic>> _groups = [
     {
-      // 📚 24시 독서실 → 도서/공부 분위기
       "image":
-          "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1200&q=80",
-      "title": "24시 독서실",
-      "address": "경기도 성남시 분당구 정자동 10-20",
-      "category": "스터디룸",
-      "comments": 12,
-      "views": 165,
-      "likes": 77,
-      "isLiked": false,
-      "createdAt": DateTime.now().subtract(const Duration(days: 1, hours: 2)),
-      "reviews": [
-        {
-          "author": "홍길동",
-          "rating": 5,
-          "content": "조용하고 자리 간격이 넓어요. 밤샘 공부하기에도 괜찮습니다.",
-          "createdAt": DateTime.now().subtract(const Duration(days: 1)),
-        },
-        {
-          "author": "민지",
-          "rating": 4,
-          "content": "와이파이 빠르고 콘센트 많음. 다만 주말엔 좀 붐벼요.",
-          "createdAt": DateTime.now().subtract(const Duration(days: 2)),
-        },
-      ],
-    },
-    {
-      // ☕️ 캠퍼스 스터디 카페 → 카페 내부
-      "image":
-          "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80",
-      "title": "캠퍼스 스터디 카페",
-      "address": "서울시 강남구 역삼동 123-45",
-      "category": "카페",
-      "comments": 120,
-      "views": 150,
-      "likes": 93,
+          "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
+      "title": "코딩 챌린지 #5",
+      "tags": ["스터디", "개발"],
+      "category": "스터디",
+      "comments": 62,
+      "views": 327,
+      "likes": 164,
       "isLiked": true,
-      "createdAt": DateTime.now().subtract(const Duration(hours: 3)),
-      "reviews": [
-        {
-          "author": "SJ",
-          "rating": 5,
-          "content": "커피 맛있고 좌석마다 조용한 분위기라 과제하기 좋아요.",
-          "createdAt": DateTime.now().subtract(const Duration(hours: 6)),
-        },
-        {
-          "author": "은서",
-          "rating": 4,
-          "content": "2층 창가 자리 추천! 다만 시간대별로 자리 경쟁이 치열합니다.",
-          "createdAt": DateTime.now().subtract(const Duration(days: 1)),
-        },
-        {
-          "author": "준호",
-          "rating": 3,
-          "content": "콘센트 부족한 자리도 있어서 자리 운이 필요해요.",
-          "createdAt": DateTime.now().subtract(const Duration(days: 2)),
-        },
-      ],
+      "createdAt": DateTime.now().subtract(const Duration(hours: 2)),
     },
     {
-      // 🏋️ 체육관 헬스장 → 헬스/웨이트
       "image":
-          "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80",
-      "title": "체육관 헬스장",
-      "address": "부산시 해운대구 우동 30-40",
-      "category": "운동시설",
-      "comments": 18,
-      "views": 138,
-      "likes": 62,
+          "https://images.unsplash.com/photo-1514517220031-65f23f5a1f1c?auto=format&fit=crop&w=1200&q=80",
+      "title": "한강에서 치맥 #20",
+      "tags": ["친목", "야외"],
+      "category": "친목",
+      "comments": 21,
+      "views": 309,
+      "likes": 152,
+      "isLiked": false,
+      "createdAt": DateTime.now().subtract(const Duration(days: 1)),
+    },
+    {
+      "image":
+          "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80",
+      "title": "발표 스터디 #2",
+      "tags": ["스터디", "발표연습"],
+      "category": "스터디",
+      "comments": 32,
+      "views": 214,
+      "likes": 162,
+      "isLiked": false,
+      "createdAt": DateTime.now().subtract(const Duration(days: 1, hours: 3)),
+    },
+    {
+      "image":
+          "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
+      "title": "주말 등산 모임 #38",
+      "tags": ["운동", "친목"],
+      "category": "운동",
+      "comments": 58,
+      "views": 300,
+      "likes": 129,
       "isLiked": false,
       "createdAt": DateTime.now().subtract(const Duration(days: 2)),
-      "reviews": [
-        {
-          "author": "철수",
-          "rating": 5,
-          "content": "기구가 새거 수준이고 PT 코치분들 친절합니다.",
-          "createdAt": DateTime.now().subtract(const Duration(days: 2)),
-        },
-        {
-          "author": "루나",
-          "rating": 4,
-          "content": "샤워실 깔끔. 피크 시간엔 러닝머신 대기 있음.",
-          "createdAt": DateTime.now().subtract(const Duration(days: 3)),
-        },
-      ],
     },
     {
-      // 📖 아늑한 북카페 → 북카페 감성
       "image":
-          "https://images.unsplash.com/photo-1559348331-267151a6275a?auto=format&fit=crop&w=1200&q=80",
-      "title": "아늑한 북카페",
-      "address": "서울시 서초구 서초동 67-89",
-      "category": "카페",
-      "comments": 56,
-      "views": 98,
-      "likes": 34,
-      "isLiked": false,
-      "createdAt": DateTime.now().subtract(const Duration(days: 1, hours: 8)),
-      "reviews": [
-        {
-          "author": "혜린",
-          "rating": 5,
-          "content": "책이 많고 조용해서 혼자 시간 보내기 최고였어요.",
-          "createdAt": DateTime.now().subtract(const Duration(days: 1)),
-        },
-      ],
-    },
-    {
-      // 🏃 학교 운동장/트랙 느낌
-      "image":
-          "https://images.unsplash.com/photo-1543394339-a0a39d8cad13?auto=format&fit=crop&w=1200&q=80",
-      "title": "학교 운동장",
-      "address": "대구시 수성구 범어동 50-60",
-      "category": "공원",
-      "comments": 6,
-      "views": 50,
-      "likes": 26,
+          "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80",
+      "title": "보드게임 할 사람 #27",
+      "tags": ["게임", "친목"],
+      "category": "게임",
+      "comments": 43,
+      "views": 210,
+      "likes": 95,
       "isLiked": true,
       "createdAt": DateTime.now().subtract(const Duration(days: 3)),
-      "reviews": [
-        {
-          "author": "Runner",
-          "rating": 4,
-          "content": "트랙 상태 양호하고 야간 조명도 있어요.",
-          "createdAt": DateTime.now().subtract(const Duration(days: 3)),
-        },
-      ],
     },
   ];
 
   @override
   void initState() {
     super.initState();
-    // 홈의 FAB가 부를 콜백을 연결
-    PlaceTabScreenController.create = _openCreateAndAppend;
+    // 홈 FAB 와이어링
+    GroupTabScreenController.create = _openCreateAndAppend;
   }
 
   @override
   void dispose() {
-    if (PlaceTabScreenController.create == _openCreateAndAppend) {
-      PlaceTabScreenController.create = null;
+    if (GroupTabScreenController.create == _openCreateAndAppend) {
+      GroupTabScreenController.create = null;
     }
     super.dispose();
   }
 
-  // 장소 작성 화면 열고, 결과를 리스트에 insert
-  Future<void> _openCreateAndAppend() async {
-    final result = await Navigator.push<Map<String, dynamic>>(
+  // 리스트 클릭 -> 워크스페이스 화면 이동
+  void _openWorkspace(Map<String, dynamic> item) {
+    final String t = (item['title'] ?? '').toString().trim();
+    Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const PlaceCreateScreen()),
+      MaterialPageRoute(
+        builder: (_) => WorkSpaceScreen(title: t.isEmpty ? '워크스페이스 (더미)' : t),
+      ),
     );
-    if (!mounted) return;
+  }
 
-    if (result != null) {
-      final List images = (result["images"] is List)
-          ? result["images"]
-          : const [];
-      final Uint8List? firstImage =
-          images.isNotEmpty && images.first is Uint8List
-          ? images.first as Uint8List
-          : null;
+  // (임시) 모임 생성 화면 연결 자리: 지금은 스텁 바텀시트로 더미 추가
+  Future<void> _openCreateAndAppend() async {
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => const _CreateGroupStub(),
+    );
 
-      final String title = ((result["name"] ?? "") as String).trim();
-      // 입력 주소가 비었으면 제목 기반 더미 주소 주입
-      final String safeAddress =
-          ((result["address"] ?? "") as String).trim().isNotEmpty
-          ? (result["address"] as String).trim()
-          : _pickDummyAddress(title);
+    if (!mounted || result == null) return;
 
-      setState(() {
-        _places.insert(0, {
-          "image": firstImage,
-          "title": title.isEmpty ? "제목 없음" : title,
-          "address": safeAddress,
-          "category": result["category"] ?? "기타",
-          "comments": 0,
-          "views": 0,
-          "likes": 0,
-          "isLiked": result["isLiked"] ?? false,
-          "createdAt": DateTime.now(),
-          "reviews": <Map<String, dynamic>>[], // 신규 등록은 빈 리뷰로 시작
-          "raw": {
-            ...result,
-            "address": safeAddress, // raw에도 반영하여 상세에서도 동일하게 노출
-          },
-        });
+    setState(() {
+      _groups.insert(0, {
+        "image": result["image"],
+        "title": result["title"],
+        "tags": result["tags"],
+        "category": result["category"],
+        "comments": 0,
+        "views": 0,
+        "likes": 0,
+        "isLiked": false,
+        "createdAt": DateTime.now(),
+        "raw": result,
       });
+    });
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("장소가 등록되었습니다.")));
-    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("모임이 등록되었습니다.")));
   }
 
   List<Map<String, dynamic>> _applySortAndFilter() {
     final filtered = _selectedCategory == "전체"
-        ? _places
-        : _places.where((p) => p["category"] == _selectedCategory).toList();
+        ? _groups
+        : _groups.where((g) => g["category"] == _selectedCategory).toList();
 
     final sorted = [...filtered];
     switch (_selectedSort) {
@@ -282,87 +182,13 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
 
   void _toggleLike(int originalIndex) {
     setState(() {
-      final liked = _places[originalIndex]["isLiked"] == true;
-      _places[originalIndex]["isLiked"] = !liked;
-      _places[originalIndex]["likes"] += liked ? -1 : 1;
-      if (_places[originalIndex]["likes"] < 0) {
-        _places[originalIndex]["likes"] = 0;
+      final liked = _groups[originalIndex]["isLiked"] == true;
+      _groups[originalIndex]["isLiked"] = !liked;
+      _groups[originalIndex]["likes"] += liked ? -1 : 1;
+      if (_groups[originalIndex]["likes"] < 0) {
+        _groups[originalIndex]["likes"] = 0;
       }
     });
-  }
-
-  /// ✅ 카드의 image(String URL 또는 Uint8List)를 상세의 images 리스트로 주입
-  Future<void> _openPreview(Map<String, dynamic> cardData) async {
-    // raw 가 있으면 그대로, 없으면 카드 데이터로 폴백
-    final Map<String, dynamic> placeData =
-        (cardData["raw"] is Map<String, dynamic>)
-        ? Map<String, dynamic>.from(cardData["raw"])
-        : {
-            "images": <dynamic>[], // dynamic으로 두어 URL/바이트 모두 허용
-            "name": (cardData["title"] ?? "장소 이름"),
-            "category": (cardData["category"] ?? "기타"),
-            "content": "",
-            "templateUsed": false,
-          };
-
-    // 메타 값 전달
-    placeData["isLiked"] = cardData["isLiked"] ?? false;
-    placeData["views"] = cardData["views"] ?? 0;
-    placeData["likes"] = cardData["likes"] ?? 0;
-    placeData["comments"] = cardData["comments"] ?? 0;
-
-    // 주소 전달: 비어 있으면 제목 기반 더미 주입
-    final String title = (cardData["title"] ?? "").toString();
-    final String addrFromCard =
-        (cardData["address"] ?? cardData["location"] ?? "").toString().trim();
-    final String safeAddress = addrFromCard.isNotEmpty
-        ? addrFromCard
-        : _pickDummyAddress(title);
-    placeData["address"] = safeAddress;
-
-    // 🎯 이미지 주입: 카드에 image가 있으면 images 리스트에 넣기 (중복 방지)
-    final img = cardData["image"];
-    final List images = (placeData["images"] is List)
-        ? List.from(placeData["images"])
-        : <dynamic>[];
-    if (img != null) {
-      final hasSame = images.any((e) => e == img);
-      if (!hasSame) images.add(img);
-    }
-    placeData["images"] = images;
-
-    // 리뷰 전달
-    placeData["reviews"] = (cardData["reviews"] is List)
-        ? List<Map<String, dynamic>>.from(
-            (cardData["reviews"] as List).whereType<Map>(),
-          )
-        : <Map<String, dynamic>>[];
-
-    // 상세
-    final result = await Navigator.push<Map<String, dynamic>>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PlacePreviewScreen(placeData: placeData),
-      ),
-    );
-
-    if (!mounted) return;
-
-    if (result != null) {
-      setState(() {
-        // cardData는 _places 안의 맵과 동일 참조(가공 리스트지만 요소는 동일 참조)
-        if (result["reviews"] is List) {
-          cardData["reviews"] = List<Map<String, dynamic>>.from(
-            (result["reviews"] as List).whereType<Map>(),
-          );
-          cardData["comments"] =
-              result["comments"] ?? (cardData["reviews"] as List).length;
-        }
-        if (result["likes"] is int) cardData["likes"] = result["likes"];
-        if (result["isLiked"] is bool) cardData["isLiked"] = result["isLiked"];
-        if (result["views"] is int) cardData["views"] = result["views"];
-      });
-    }
   }
 
   @override
@@ -386,15 +212,15 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
               itemCount: visible.length,
               itemBuilder: (context, i) {
                 final item = visible[i];
-                final originIndex = _places.indexWhere(
-                  (p) => identical(p, item),
+                final originIndex = _groups.indexWhere(
+                  (g) => identical(g, item),
                 );
                 final idx = originIndex == -1 ? i : originIndex;
 
-                return PlaceListCard(
+                return GroupListCard(
                   data: item,
                   onLikeTap: () => _toggleLike(idx),
-                  onTap: () => _openPreview(item),
+                  onTap: () => _openWorkspace(item),
                 );
               },
             ),
@@ -405,7 +231,7 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
   }
 }
 
-/// 상단 정렬 칩 + 카테고리 드롭다운
+/// ================= 공통 상단 바(정렬 칩 + 카테고리 칩) =================
 class _SortAndCategoryBar extends StatelessWidget {
   final String selectedSort;
   final ValueChanged<String> onChangeSort;
@@ -445,6 +271,8 @@ class _SortAndCategoryBar extends StatelessWidget {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(chipR),
                   onTap: () => onChangeSort(s),
+                  splashColor: Colors.transparent,
+                  highlightColor: Colors.transparent,
                   child: Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: hPad,
@@ -491,7 +319,6 @@ class _SortAndCategoryBar extends StatelessWidget {
   }
 }
 
-/// 카테고리 칩 메뉴 (간단 버전)
 class _CategoryChipMenu extends StatelessWidget {
   final String label;
   final List<String> items;
@@ -715,13 +542,13 @@ class _ChipButton extends StatelessWidget {
   }
 }
 
-/// ===== 리스트 카드 =====
-class PlaceListCard extends StatelessWidget {
+/// ================= 리스트 카드(PlaceTab과 동일 레이아웃/사이즈) =================
+class GroupListCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final VoidCallback onLikeTap;
   final VoidCallback? onTap;
 
-  const PlaceListCard({
+  const GroupListCard({
     super.key,
     required this.data,
     required this.onLikeTap,
@@ -762,6 +589,20 @@ class PlaceListCard extends StatelessWidget {
         child: child,
       ),
     );
+  }
+
+  String _tagsLine() {
+    final raw = data["tags"];
+    if (raw is List) {
+      final list = raw.whereType<String>().toList();
+      if (list.isEmpty) return "";
+      return list
+          .map((t) => t.trim())
+          .where((t) => t.isNotEmpty)
+          .map((t) => t.startsWith('#') ? t : '#$t')
+          .join(' ');
+    }
+    return "";
   }
 
   @override
@@ -828,8 +669,9 @@ class PlaceListCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
+                    // 태그 라인(Place의 주소 라인 자리)
                     Text(
-                      (data["address"] ?? "").toString(),
+                      _tagsLine(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -838,10 +680,9 @@ class PlaceListCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    // === 메타(좌) + 카테고리 칩(우) 한 줄 ===
+                    // 메타(좌) + 카테고리 칩(우)
                     Row(
                       children: [
-                        // 메타
                         Expanded(
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -890,7 +731,6 @@ class PlaceListCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        // 카테고리 칩
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -917,6 +757,85 @@ class PlaceListCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ===== 임시 생성 스텁(연결 전까지 사용) =====
+class _CreateGroupStub extends StatelessWidget {
+  const _CreateGroupStub();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE5E7EB),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const Text(
+              "모임 만들기 (스텁)",
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: theme.kTextPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              "실제 생성 화면 연결 전까지 임시로 더미 모임을 추가합니다.",
+              style: TextStyle(color: theme.kTextMuted),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5BA7FF),
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () {
+                  Navigator.pop<Map<String, dynamic>>(context, {
+                    "image":
+                        "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
+                    "title": "새로운 모임 제목",
+                    "tags": ["친목", "자기계발"],
+                    "category": "친목",
+                  });
+                },
+                child: const Text(
+                  "더미 모임 추가",
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "취소",
+                style: TextStyle(color: theme.kTextPrimary),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );

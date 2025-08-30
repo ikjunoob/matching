@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'ask_for_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'place_tab_screen.dart';
+import 'group_tab_screen.dart';
 
 /// ===== Design Tokens (캡처 기준 색상) =====
 const kPageBg = Color(0xFFF9FAFB); // 전체 배경
@@ -226,7 +227,34 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             );
           } else if (_selectedTabIndex == 1) {
-            return const Center(child: Text("모임 탭 더미"));
+            // ★ 모임 글 생성 플로팅 버튼 : GroupTabScreen + 동일 스타일의 FAB
+            return Stack(
+              children: [
+                const GroupTabScreen(),
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: SafeArea(
+                    child: FloatingActionButton(
+                      heroTag: "groupFab",
+                      onPressed: () async {
+                        final fn = GroupTabScreenController.create;
+                        if (fn != null)
+                          await fn(); // group_create_screen 열기 + 인서트
+                      },
+                      elevation: 4,
+                      backgroundColor: const Color(0xFFFFFFFF),
+                      shape: const CircleBorder(),
+                      child: const Icon(
+                        Icons.add,
+                        size: 35,
+                        color: Color(0xFF59BDF7),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
           } else if (_selectedTabIndex == 2) {
             // ★ 구해요 글 생성 플로팅 + 버튼
             return Stack(

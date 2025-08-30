@@ -212,16 +212,156 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
     });
   }
 
+  // === 더미 주소 생성기: 제목 기반으로 안정적 선택 ===
+  String _dummyAddressFrom(String seed) {
+    const samples = [
+      '서울특별시 강남구 테헤란로 123',
+      '서울특별시 관악구 대학동 11-1',
+      '서울특별시 마포구 양화로 45',
+      '경기도 성남시 분당구 판교역로 235',
+      '부산광역시 해운대구 센텀중앙로 55',
+      '대구광역시 수성구 달구벌대로 1234',
+      '광주광역시 북구 첨단과기로 99',
+      '대전광역시 유성구 대학로 291',
+      '인천광역시 연수구 송도과학로 16',
+      '제주특별자치도 제주시 첨단로 242',
+    ];
+    final s = (seed.trim().isEmpty
+        ? DateTime.now().millisecondsSinceEpoch
+        : seed.hashCode);
+    final idx = s.abs() % samples.length;
+    return samples[idx];
+  }
+
+  // 이미지 소스 수집: 바이트/URL 다 지원 + 단일 'image' 키도 포함
+  List<dynamic> _gatherImages(Map<String, dynamic> data) {
+    final List<dynamic> out = [];
+
+    // 1) images: [...]
+    final raw = data['images'];
+    if (raw is List) {
+      for (final e in raw) {
+        if (e is Uint8List) out.add(e);
+        if (e is String && e.trim().isNotEmpty) out.add(e.trim());
+      }
+    }
+
+    // 2) 단일 image / cover / thumb / coverImage
+    for (final key in const ['image', 'cover', 'thumb', 'coverImage']) {
+      final v = data[key];
+      if (v is Uint8List) out.insert(0, v);
+      if (v is String && v.trim().isNotEmpty) out.insert(0, v.trim());
+    }
+
+    // 3) imageUrls / photos 같은 URL 배열
+    for (final key in const ['imageUrls', 'photos']) {
+      final v = data[key];
+      if (v is List) {
+        for (final e in v) {
+          if (e is String && e.trim().isNotEmpty) out.add(e.trim());
+        }
+      }
+    }
+
+    // URL 중복 제거(바이트는 유지)
+    final seen = <String>{};
+    final dedup = <dynamic>[];
+    for (final e in out) {
+      if (e is String) {
+        if (seen.add(e)) dedup.add(e);
+      } else {
+        dedup.add(e);
+      }
+    }
+    return dedup;
+  }
+
+  // === 이미지 위에 얹는 주소 배지(반투명) ===
+  Widget _addressPill(BuildContext context, String text) {
+    final maxW = MediaQuery.of(context).size.width * 0.72;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxW),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color.fromRGBO(0, 0, 0, 0.55),
+          borderRadius: BorderRadius.circular(9999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const FaIcon(
+              FontAwesomeIcons.locationDot,
+              size: 12,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _imageWidget(dynamic src) {
+    if (src is Uint8List) {
+      return Image.memory(src, fit: BoxFit.cover, width: double.infinity);
+    } else if (src is String) {
+      return Image.network(
+        src,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        errorBuilder: (_, __, ___) => Container(
+          color: const Color(0xFFE5E7EB),
+          alignment: Alignment.center,
+          child: const Text(
+            "이미지를 불러오지 못했어요",
+            style: TextStyle(color: theme.kTextMuted),
+          ),
+        ),
+      );
+    } else {
+      return Container(
+        color: const Color(0xFFE5E7EB),
+        alignment: Alignment.center,
+        child: const Text(
+          "이미지가 없습니다.",
+          style: TextStyle(color: theme.kTextMuted),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<Uint8List> images =
-        (widget.placeData['images'] as List?)?.cast<Uint8List>() ?? [];
+    final List<dynamic> images = _gatherImages(widget.placeData);
+
     final String title =
         (widget.placeData['name'] as String?)?.trim().isEmpty ?? true
         ? "장소 이름"
         : widget.placeData['name'];
     final String category = widget.placeData['category'] ?? "기타";
     final String content = widget.placeData['content'] ?? "";
+
+    // 주소/위치 문자열 + 비어있으면 제목 기반 더미 생성
+    final String addressRaw =
+        ((widget.placeData["address"] ?? widget.placeData["location"]) ?? "")
+            .toString()
+            .trim();
+    final String address = addressRaw.isNotEmpty
+        ? addressRaw
+        : _dummyAddressFrom(title);
 
     final bool useTemplate =
         (widget.placeData['templateUsed'] ?? false) ||
@@ -236,10 +376,7 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
         scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: theme.kTextPrimary),
-          onPressed: () {
-            // 결과를 넘기지 않고 안전하게 뒤로가기
-            Navigator.maybePop(context);
-          },
+          onPressed: () => Navigator.maybePop(context),
         ),
         title: const Text(
           "장소 정보",
@@ -309,11 +446,7 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
                       controller: _pageController,
                       itemCount: images.length,
                       itemBuilder: (context, index) {
-                        return Image.memory(
-                          images[index],
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        );
+                        return _imageWidget(images[index]);
                       },
                     ),
                     if (images.length > 1) ...[
@@ -407,6 +540,12 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
                         ),
                       ),
                     ],
+                    // 주소 배지: 좌하단 (더미 포함)
+                    Positioned(
+                      left: 12,
+                      bottom: 12,
+                      child: _addressPill(context, address),
+                    ),
                   ],
                 ),
               )
@@ -416,6 +555,8 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
                 color: const Color(0xFFE5E7EB),
                 child: const Center(child: Text("이미지가 없습니다.")),
               ),
+
+            // ===== 본문 =====
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -493,6 +634,8 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
+
+                  // 템플릿/일반 본문
                   if (useTemplate && parsed != null) ...[
                     _section(
                       icon: FontAwesomeIcons.fileLines,
@@ -523,6 +666,7 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
                         color: theme.kTextPrimary,
                       ),
                     ),
+
                   const SizedBox(height: 16),
                   const Text(
                     "위치",
@@ -549,6 +693,7 @@ class _PlacePreviewScreenState extends State<PlacePreviewScreen> {
                   const SizedBox(height: 24),
                   const Divider(color: theme.kDivider, height: 1),
                   const SizedBox(height: 16),
+
                   Text(
                     "리뷰 (${_reviews.length})",
                     style: const TextStyle(
