@@ -24,9 +24,9 @@ class GroupTabScreen extends StatefulWidget {
 
 class _GroupTabScreenState extends State<GroupTabScreen> {
   // ===== 상태 =====
-  GroupTab _tab = GroupTab.regular; // 추천/인기/정규/신규
+  GroupTab _tab = GroupTab.recommend; // 추천/인기/정규/신규
   String _selectedCategory = "전체"; // 카테고리
-  int _selectedWeekday = 3; // 정규 요일: 0=전체, 1=월..7=일
+  int _selectedWeekday = 0; // 정규 요일: 0=전체, 1=월..7=일
 
   // 카테고리 목록
   final List<String> _categories = const [
@@ -57,6 +57,8 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "createdAt": DateTime.now().subtract(const Duration(hours: 2)),
       "isRegular": true,
       "weekday": 3, // 수
+      "memberCount": 5,
+      "memberLimit": 12,
     },
     {
       "image":
@@ -71,6 +73,8 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "createdAt": DateTime.now().subtract(const Duration(days: 1)),
       "isRegular": true,
       "weekday": 6, // 토
+      "memberCount": 8,
+      "memberLimit": 10,
     },
     {
       "image":
@@ -85,6 +89,8 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "createdAt": DateTime.now().subtract(const Duration(days: 1, hours: 3)),
       "isRegular": true,
       "weekday": 2, // 화
+      "memberCount": 4,
+      "memberLimit": 8,
     },
     {
       "image":
@@ -99,6 +105,8 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "createdAt": DateTime.now().subtract(const Duration(days: 2)),
       "isRegular": true,
       "weekday": 7, // 일
+      "memberCount": 10,
+      "memberLimit": 15,
     },
     {
       "image":
@@ -113,6 +121,8 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "createdAt": DateTime.now().subtract(const Duration(days: 3)),
       "isRegular": true,
       "weekday": 5, // 금
+      "memberCount": 6,
+      "memberLimit": 6,
     },
     {
       "image":
@@ -127,6 +137,8 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "createdAt": DateTime.now().subtract(const Duration(hours: 7)),
       "isRegular": false, // 단발/수시
       "weekday": 4, // 참고용
+      "memberCount": 3,
+      "memberLimit": 20,
     },
     {
       "image":
@@ -141,6 +153,8 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "createdAt": DateTime.now().subtract(const Duration(hours: 1)),
       "isRegular": true,
       "weekday": 4, // 목
+      "memberCount": 5,
+      "memberLimit": 10,
     },
     {
       "image":
@@ -155,6 +169,8 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       "createdAt": DateTime.now().subtract(const Duration(days: 4)),
       "isRegular": true,
       "weekday": 1, // 월
+      "memberCount": 2,
+      "memberLimit": 6,
     },
   ];
 
@@ -196,7 +212,7 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
       _groups.insert(0, {
         "image": result["image"],
         "title": result["title"],
-        "tags": result["tags"] ?? const <String>[],
+        "tags": result["tags"] ?? const <String>[], // ← 생성 화면의 태그 반영
         "category": result["category"] ?? "기타",
         "comments": 0,
         "views": 0,
@@ -205,6 +221,8 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
         "createdAt": DateTime.now(),
         "isRegular": result["isRegular"] ?? true,
         "weekday": result["weekday"] ?? 6, // 토
+        "memberCount": result["memberCount"] ?? 1,
+        "memberLimit": result["memberLimit"] ?? 10,
         "raw": result,
       });
     });
@@ -282,7 +300,7 @@ class _GroupTabScreenState extends State<GroupTabScreen> {
     final visible = _applyTabSortFilter();
 
     return Scaffold(
-      backgroundColor: theme.kPageBg,
+      backgroundColor: const Color(0xFFF3F4F6),
       body: Column(
         children: [
           // 상단 탭/필터 바
@@ -344,10 +362,13 @@ class _TopFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ AskForScreen과 동일한 스케일/사이즈
     const double scale = 1.0;
-    final chipR = 18.0 * scale; // 둥근 모서리
-    final hPad = 12.0 * scale;
-    final vPad = 8.0 * scale;
+    final double chipRadius = 14.0 * scale;
+    final double chipHPad = 10.0 * scale;
+    final double chipVPad = 6.0 * scale;
+    final double fontSize = 12.0 * scale;
+    final double iconSize = 14.0 * scale;
 
     final tabs = <(String, GroupTab)>[
       ("추천", GroupTab.recommend),
@@ -358,28 +379,39 @@ class _TopFilterBar extends StatelessWidget {
 
     Widget buildChip(String label, bool sel, VoidCallback onTap) {
       return Padding(
-        padding: const EdgeInsets.only(right: 6),
+        padding: EdgeInsets.only(right: 6.0 * scale),
         child: InkWell(
-          borderRadius: BorderRadius.circular(chipR),
+          borderRadius: BorderRadius.circular(chipRadius),
           onTap: onTap,
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+            padding: EdgeInsets.symmetric(
+              horizontal: chipHPad,
+              vertical: chipVPad,
+            ),
             decoration: BoxDecoration(
               color: sel ? const Color(0xFF1F2937) : theme.kWhite,
-              borderRadius: BorderRadius.circular(chipR),
+              borderRadius: BorderRadius.circular(chipRadius),
               border: Border.all(
                 color: sel ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB),
+                width: 1,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(sel ? 0.08 : 0.03),
+                  blurRadius: sel ? 6 : 3,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 13 * scale,
+                fontSize: fontSize,
                 height: 1.1,
                 color: sel ? theme.kWhite : theme.kTextPrimary,
-                fontWeight: sel ? FontWeight.bold : FontWeight.w500,
+                fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ),
@@ -389,8 +421,11 @@ class _TopFilterBar extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      // 높이 살짝 축소
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      constraints: const BoxConstraints(minHeight: 44), // ✅ AskFor 기준
+      padding: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 10.0 * scale,
+      ), // ✅ AskFor 기준
       decoration: const BoxDecoration(
         color: theme.kWhite,
         border: Border(bottom: BorderSide(color: theme.kDivider, width: 1)),
@@ -406,11 +441,20 @@ class _TopFilterBar extends StatelessWidget {
                 )
                 .toList(),
           ),
-          // 우: 카테고리 드롭다운 칩  (선택 텍스트 + 아이콘)
+          // 우: 카테고리 드롭다운 칩 (AskFor와 동일 파라미터 전달)
           _CategoryChipMenu(
             label: selectedCategory,
             items: categories,
             onSelected: onChangeCategory,
+            accent: const Color.fromARGB(255, 88, 188, 255),
+            radius: chipRadius,
+            hPad: chipHPad,
+            vPad: chipVPad,
+            fontSize: fontSize, // ✅ 텍스트 크기
+            iconSize: iconSize, // ✅ 아이콘 크기
+            menuItemHeight: 40.0 * scale, // ✅ 메뉴 아이템 높이
+            menuFontSize: 15.0 * scale, // ✅ 메뉴 폰트
+            maxMenuWidth: 160.0 * scale, // ✅ 메뉴 너비
           ),
         ],
       ),
@@ -448,9 +492,9 @@ class _WeekdayFilterBar extends StatefulWidget {
 
 class _WeekdayFilterBarState extends State<_WeekdayFilterBar> {
   // 높이/패딩 조절 상수 (전체 높이 살짝 감소)
-  static const double _trackHPad = 15.0; // 트랙 좌우 여백 ↑ (오버플로 방지)
+  static const double _trackHPad = 8.0; // 트랙 좌우 여백 ↑ (오버플로 방지)
   static const double _trackVPad = 3.0; // 트랙 상하 여백 ↓
-  static const double _itemHPad = 13.0; // 아이템 좌우 여백(기존 16)
+  static const double _itemHPad = 14.0; // 아이템 좌우 여백(기존 16)
   static const double _itemVPad = 10.0; // 아이템 상하 여백(기존 8)
   static const double _fontSize = 14.0; // 폰트(기존 13)
 
@@ -539,7 +583,7 @@ class _WeekdayFilterBarState extends State<_WeekdayFilterBar> {
               vertical: _trackVPad,
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6),
+              color: theme.kcontents, // ← 요청하신 색상 토큰
               borderRadius: BorderRadius.circular(10),
             ),
             child: IntrinsicWidth(
@@ -615,30 +659,33 @@ class _CategoryChipMenu extends StatelessWidget {
   final List<String> items;
   final ValueChanged<String> onSelected;
 
+  // ✅ AskForScreen과 동일 파라미터
+  final Color accent;
+  final double radius, hPad, vPad, fontSize, iconSize;
+  final double menuItemHeight, menuFontSize, maxMenuWidth;
+
   const _CategoryChipMenu({
     required this.label,
     required this.items,
     required this.onSelected,
+    required this.accent,
+    required this.radius,
+    required this.hPad,
+    required this.vPad,
+    required this.fontSize,
+    required this.iconSize,
+    required this.menuItemHeight,
+    required this.menuFontSize,
+    required this.maxMenuWidth,
   });
 
   @override
   Widget build(BuildContext context) {
-    const double scale = 1.0;
-    const double chipRadius = 18.0 * scale;
-    const double chipHPad = 12.0 * scale;
-    const double chipVPad = 8.0 * scale;
-    const double fontSize = 13.0 * scale;
-    const double iconSize = 14.0 * scale;
-    const double menuItemHeight = 40.0 * scale;
-    const double menuFontSize = 15.0 * scale;
-    const double maxMenuWidth = 160.0;
-    const Color accentColor = Color.fromARGB(255, 88, 188, 255);
-
     return _ChipButton(
       label: label,
-      radius: chipRadius,
-      hPad: chipHPad,
-      vPad: chipVPad,
+      radius: radius,
+      hPad: hPad,
+      vPad: vPad,
       fontSize: fontSize,
       iconSize: iconSize,
       onTap: (box) async {
@@ -661,7 +708,7 @@ class _CategoryChipMenu extends StatelessWidget {
           color: theme.kWhite,
           elevation: 1,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          constraints: const BoxConstraints(
+          constraints: BoxConstraints(
             minWidth: maxMenuWidth,
             maxWidth: maxMenuWidth,
           ),
@@ -674,7 +721,7 @@ class _CategoryChipMenu extends StatelessWidget {
                   child: _HoverMenuTile(
                     text: e,
                     isSelected: e == label,
-                    accent: accentColor,
+                    accent: accent,
                     fontSize: menuFontSize,
                   ),
                 ),
@@ -803,7 +850,7 @@ class _ChipButton extends StatelessWidget {
               decoration: BoxDecoration(
                 color: theme.kWhite,
                 borderRadius: BorderRadius.circular(radius),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(color: theme.kDivider),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -817,10 +864,10 @@ class _ChipButton extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(width: 4 * (fontSize / 13.0)),
-                  const FaIcon(
+                  SizedBox(width: 4 * (fontSize / 12.0)),
+                  FaIcon(
                     FontAwesomeIcons.chevronDown,
-                    size: 14,
+                    size: iconSize,
                     color: theme.kTextPrimary,
                   ),
                 ],
@@ -904,6 +951,9 @@ class GroupListCard extends StatelessWidget {
         ? data["category"]
         : "기타";
 
+    final int memberCount = (data["memberCount"] ?? 0) as int;
+    final int memberLimit = (data["memberLimit"] ?? 0) as int;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
@@ -960,7 +1010,7 @@ class GroupListCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    // 태그 라인
+                    // 태그 라인 (제목 아래 한 줄)
                     Text(
                       _tagsLine(),
                       maxLines: 1,
@@ -978,14 +1028,15 @@ class GroupListCard extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              // ✅ 인원수 표기 형식: "x/y" (공백 제거)
                               const FaIcon(
-                                FontAwesomeIcons.solidCommentDots,
+                                FontAwesomeIcons.users,
                                 size: 13,
                                 color: theme.kTextMuted,
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                "${data["comments"] ?? 0}",
+                                "$memberCount/$memberLimit",
                                 style: const TextStyle(
                                   fontSize: 11,
                                   color: theme.kTextMuted,

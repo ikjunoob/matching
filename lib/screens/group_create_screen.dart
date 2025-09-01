@@ -9,6 +9,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart'; // ← 숫자 입력 제약 및 태그 포맷용
 
 import 'ask_for_common.dart' as theme;
 import 'group_preview_screen.dart';
@@ -26,10 +27,16 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   // 입력 컨트롤러
   final _nameCtrl = TextEditingController();
   final _introCtrl = TextEditingController();
+
+  // ▼ 추가: 태그 입력
+  final _tagCtrl = TextEditingController();
+  final _tagFocus = FocusNode();
+
   final _dateInfoCtrl = TextEditingController(text: "");
   final _placeInfoCtrl = TextEditingController(text: "");
   final _rulesCtrl = TextEditingController();
   final _planCtrl = TextEditingController();
+  final _memberLimitCtrl = TextEditingController(text: ""); // ← 모집 인원(최대)
 
   final _rulesFocus = FocusNode();
 
@@ -74,6 +81,18 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   @override
   void initState() {
     super.initState();
+
+    // 태그 필드: 포커스가 가고 비어있으면 '#' 자동 삽입
+    _tagFocus.addListener(() {
+      if (_tagFocus.hasFocus && _tagCtrl.text.trim().isEmpty) {
+        _tagCtrl.text = "#";
+        _tagCtrl.selection = TextSelection.collapsed(
+          offset: _tagCtrl.text.length,
+        );
+        setState(() {});
+      }
+    });
+
     _rulesFocus.addListener(() {
       if (_rulesFocus.hasFocus && _rulesCtrl.text.trim().isEmpty) {
         _rulesCtrl.text = _bullet;
@@ -89,14 +108,18 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _introCtrl.dispose();
+    _tagCtrl.dispose();
     _dateInfoCtrl.dispose();
     _placeInfoCtrl.dispose();
     _rulesCtrl.dispose();
     _planCtrl.dispose();
+    _memberLimitCtrl.dispose();
+    _tagFocus.dispose();
     _rulesFocus.dispose();
     super.dispose();
   }
 
+  // ===== 이미지 고르기 =====
   Future<void> _pickImage() async {
     if (kIsWeb || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       final res = await FilePicker.platform.pickFiles(
@@ -140,10 +163,43 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     }
   }
 
+  // ===== 태그 입력 보조 =====
+  void _onTagChanged(String v) {
+    // 항상 '#'로 시작
+    if (v.isNotEmpty && !v.startsWith("#")) {
+      _tagCtrl.text = "#$v";
+      _tagCtrl.selection = TextSelection.collapsed(
+        offset: _tagCtrl.text.length,
+      );
+      return;
+    }
+    // 공백 입력 시 다음 태그 시작을 위한 '#' 자동 삽입
+    if (v.isNotEmpty && v.endsWith(" ")) {
+      if (!v.endsWith(" #")) {
+        _tagCtrl.text = "$v#";
+        _tagCtrl.selection = TextSelection.collapsed(
+          offset: _tagCtrl.text.length,
+        );
+      }
+    }
+    setState(() {});
+  }
+
+  // "헬스 #운동  #카페" → ["헬스","운동","카페"]
+  List<String> _parseTags(String raw) {
+    return raw
+        .trim()
+        .split(" ")
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .map((t) => t.startsWith("#") ? t.substring(1) : t)
+        .where((t) => t.isNotEmpty)
+        .toList();
+  }
+
   // 엔터(개행) 입력되면 자동으로 글머리 추가
   void _onRulesChanged(String v) {
     if (v.endsWith("\n")) {
-      // 이미 글머리로 시작하면 중복 방지
       final next = "$v$_bullet";
       _rulesCtrl.text = next;
       _rulesCtrl.selection = TextSelection.collapsed(offset: next.length);
@@ -162,12 +218,15 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   }
 
   Map<String, dynamic> _buildGroup() {
+    final int limit =
+        int.tryParse(_memberLimitCtrl.text.trim()) ?? 10; // ← 입력값 반영
+
     return {
       // 리스트 카드 공통 키
       "image": _imageBytes ?? _imageFile, // 카드에선 Uint8List/URL만 쓰면 됨
       "title": _nameCtrl.text.trim(),
       "category": _selectedCategory,
-      "tags": const <String>[],
+      "tags": _parseTags(_tagCtrl.text), // ← 입력한 태그 반영
       "comments": 0,
       "views": 0,
       "likes": 0,
@@ -181,9 +240,9 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
       "rules": _rulesLines(),
       "plan": _planCtrl.text.trim(),
 
-      // 참여 인원(더미)
-      "memberCount": 1,
-      "memberLimit": 15,
+      // 참여 인원
+      "memberCount": 1, // 시작은 1로(개설자)
+      "memberLimit": limit,
     };
   }
 
@@ -324,7 +383,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
               ),
               const SizedBox(height: 12),
 
-              // 2) 카테고리
+              // 3) 카테고리
               const Padding(
                 padding: EdgeInsets.only(left: 6),
                 child: Text(
@@ -378,7 +437,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
               ),
               const SizedBox(height: 12),
 
-              // 3) 한 줄 소개
+              // 4) 한 줄 소개
               const Padding(
                 padding: EdgeInsets.only(left: 6),
                 child: Text(
@@ -399,7 +458,29 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
               ),
               const SizedBox(height: 12),
 
-              // 4) 모임 정보 (달력/장소 아이콘 포함, 각 한 줄)
+              // 4-1) 태그
+              const Padding(
+                padding: EdgeInsets.only(left: 6),
+                child: Text(
+                  "태그",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: theme.kTextPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _tagCtrl,
+                focusNode: _tagFocus,
+                onChanged: _onTagChanged,
+                decoration: _fieldDeco("#태그 입력 후 스페이스바"),
+                style: const TextStyle(color: theme.kTextPrimary, fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+
+              // 5) 모임 정보 (달력/장소 아이콘 포함, 각 한 줄)
               const Padding(
                 padding: EdgeInsets.only(left: 6),
                 child: Text(
@@ -453,7 +534,51 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
               ),
               const SizedBox(height: 12),
 
-              // 5) 모임 규칙 (• 자동 생성)
+              // 6) 모집 인원 (최대 인원)
+              const Padding(
+                padding: EdgeInsets.only(left: 6),
+                child: Text(
+                  "모집 인원",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: theme.kTextPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _memberLimitCtrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: _fieldDeco("최대 인원 (예: 10)").copyWith(
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(left: 10, right: 8),
+                    child: Icon(
+                      FontAwesomeIcons.users,
+                      size: 18,
+                      color: theme.kTextPrimary,
+                    ),
+                  ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return "모집 인원을 입력해 주세요.";
+                  }
+                  final n = int.tryParse(v);
+                  if (n == null || n <= 0) return "1 이상의 숫자를 입력해 주세요.";
+                  if (n > 999) return "999 이하로 입력해 주세요.";
+                  return null;
+                },
+                style: const TextStyle(color: theme.kTextPrimary, fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+
+              // 7) 모임 규칙 (• 자동 생성)
               const Padding(
                 padding: EdgeInsets.only(left: 6),
                 child: Text(
@@ -480,7 +605,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
               ),
               const SizedBox(height: 12),
 
-              // 6) 활동 계획
+              // 8) 활동 계획
               const Padding(
                 padding: EdgeInsets.only(left: 6),
                 child: Text(

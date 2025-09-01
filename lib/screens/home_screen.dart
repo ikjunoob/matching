@@ -1,14 +1,19 @@
-import 'package:flutter/material.dart';
-// 추가
-import 'notification_screen.dart';
-import 'chat_list_screen.dart';
-import 'dart:ui';
-import 'ask_for_screen.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'place_tab_screen.dart';
-import 'group_tab_screen.dart';
+import "dart:ui";
+import "package:flutter/material.dart";
+import "package:font_awesome_flutter/font_awesome_flutter.dart";
 
-/// ===== Design Tokens (캡처 기준 색상) =====
+// ===== 다른 화면들 =====
+import "chat_list_screen.dart";
+import "notification_screen.dart";
+import "ask_for_screen.dart";
+import "place_tab_screen.dart";
+import "group_tab_screen.dart";
+
+// ===== 공통 위젯(분리한 헤더/탭) =====
+import "../widgets/app_header.dart";
+import "../widgets/app_top_tabs.dart";
+
+// ===== Design Tokens =====
 const kPageBg = Color(0xFFF9FAFB); // 전체 배경
 const kCardDivider = Color(0xFFE5E7EB); // 탭바 하단 보더
 const kTextPrimary = Color(0xFF111827); // 기본 텍스트
@@ -28,63 +33,32 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late int _selectedTabIndex;
-  final List<String> tabs = ['추천', '모임', '구해요', '장소'];
-
-  // 탭 인디케이터용
-
-  late List<GlobalKey> _tabKeys;
-  final GlobalKey _tabBarWrapperKey = GlobalKey(); // 부모 컨테이너 키
-  double _indicatorX = 0.0;
-  double _indicatorWidth = 0.0;
+  final List<String> tabs = const ["추천", "모임", "구해요", "장소"];
 
   @override
   void initState() {
     super.initState();
     _selectedTabIndex = widget.tabIndex;
-    _tabKeys = List.generate(tabs.length, (_) => GlobalKey());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateIndicatorPosition(_selectedTabIndex);
-    });
   }
 
   @override
   void didUpdateWidget(covariant HomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.tabIndex != oldWidget.tabIndex) {
+      // 빌드가 끝난 다음 프레임에 상태 변경
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         _onTabTap(widget.tabIndex);
       });
     }
   }
 
   void _onTabTap(int index) {
-    setState(() {
-      _selectedTabIndex = index;
-    });
-    _updateIndicatorPosition(index);
+    setState(() => _selectedTabIndex = index);
     widget.onTabChange?.call(index);
   }
 
-  void _updateIndicatorPosition(int index) {
-    final key = _tabKeys[index];
-    final RenderBox? child =
-        key.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? parent =
-        _tabBarWrapperKey.currentContext?.findRenderObject() as RenderBox?;
-
-    if (child != null && parent != null) {
-      final childLeftGlobal = child.localToGlobal(Offset.zero).dx;
-      final parentLeftGlobal = parent.localToGlobal(Offset.zero).dx;
-      final size = child.size;
-
-      setState(() {
-        _indicatorX = childLeftGlobal - parentLeftGlobal; // 부모 기준 좌표
-        _indicatorWidth = size.width;
-      });
-    }
-  }
-
-  // ✨ 개선점: 핫한 유저 팝업을 띄우는 함수 추가
+  // ✨ 핫한 유저 팝업
   void _showUserPopup({
     required String imageUrl,
     required String name,
@@ -110,208 +84,133 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kPageBg,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              child: Image.asset(
-                'assets/icons/main_logo.png',
-                height: 50,
-                fit: BoxFit.contain,
-              ),
-            ),
-            const Spacer(),
-            IconButton(
-              icon: const FaIcon(
-                FontAwesomeIcons.commentDots,
-                color: kTextMuted,
-                size: 19,
-              ),
-              tooltip: '채팅',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ChatListScreen()),
-                );
-              },
-            ),
-            IconButton(
-              icon: const FaIcon(
-                FontAwesomeIcons.bell,
-                color: kTextMuted,
-                size: 19,
-              ),
-              tooltip: '알림',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const NotificationScreen()),
-                );
-              },
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(42),
-          child: Container(
-            key: _tabBarWrapperKey,
-            height: 42,
-            color: Colors.white,
-            child: Stack(
-              children: [
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Divider(height: 1, thickness: 1, color: kCardDivider),
-                ),
-                AnimatedPositioned(
-                  left: _indicatorX + (_indicatorWidth * 0.15),
-                  width: _indicatorWidth * 0.7,
-                  bottom: 0,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOut,
-                  child: Container(
-                    height: 2.5,
-                    decoration: BoxDecoration(
-                      color: kIndicator,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                Row(
-                  children: List.generate(tabs.length, (index) {
-                    final isSelected = _selectedTabIndex == index;
-                    return InkWell(
-                      key: _tabKeys[index],
-                      onTap: () => _onTabTap(index),
-                      splashColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        child: Text(
-                          tabs[index],
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: isSelected ? kTextPrimary : kTextMuted,
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ],
-            ),
-          ),
+
+      // ✅ 공통 헤더 사용 + 상단 탭은 bottom으로 주입
+      appBar: CommonHeader(
+        logoPath: "assets/icons/main_logo.png", // 현재 에셋 경로에 맞춤
+        onMessageTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChatListScreen()),
+          );
+        },
+        onBellTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotificationScreen()),
+          );
+        },
+        bottom: HomeTopTabs(
+          tabs: tabs,
+          currentIndex: _selectedTabIndex,
+          onChanged: _onTabTap,
+          indicatorColor: kIndicator,
+          dividerColor: kCardDivider,
+          activeColor: kTextPrimary,
+          inactiveColor: kTextMuted,
         ),
       ),
+
       body: Builder(
         builder: (context) {
-          if (_selectedTabIndex == 0) {
-            // ✅ 추천 탭: maxWidth 768px 적용
-            return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 768),
-                child: _buildRecommendTab(),
-              ),
-            );
-          } else if (_selectedTabIndex == 1) {
-            // ★ 모임 글 생성 플로팅 버튼 : GroupTabScreen + 동일 스타일의 FAB
-            return Stack(
-              children: [
-                const GroupTabScreen(),
-                Positioned(
-                  right: 16,
-                  bottom: 16,
-                  child: SafeArea(
-                    child: FloatingActionButton(
-                      heroTag: "groupFab",
-                      onPressed: () async {
-                        final fn = GroupTabScreenController.create;
-                        if (fn != null)
-                          await fn(); // group_create_screen 열기 + 인서트
-                      },
-                      elevation: 4,
-                      backgroundColor: const Color(0xFFFFFFFF),
-                      shape: const CircleBorder(),
-                      child: const Icon(
-                        Icons.add,
-                        size: 35,
-                        color: Color(0xFF59BDF7),
+          switch (_selectedTabIndex) {
+            case 0:
+              // ✅ 추천 탭: maxWidth 768px 적용
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 768),
+                  child: _buildRecommendTab(),
+                ),
+              );
+
+            case 1:
+              // ★ 모임 글 생성 플로팅 버튼 : GroupTabScreen + 동일 스타일의 FAB
+              return Stack(
+                children: [
+                  const GroupTabScreen(),
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: SafeArea(
+                      child: FloatingActionButton(
+                        heroTag: "groupFab",
+                        onPressed: () async {
+                          final fn = GroupTabScreenController.create;
+                          if (fn != null)
+                            await fn(); // group_create_screen 열기 + 인서트
+                        },
+                        elevation: 4,
+                        backgroundColor: const Color(0xFFFFFFFF),
+                        shape: const CircleBorder(),
+                        child: const Icon(
+                          Icons.add,
+                          size: 35,
+                          color: Color(0xFF59BDF7),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            );
-          } else if (_selectedTabIndex == 2) {
-            // ★ 구해요 글 생성 플로팅 + 버튼
-            return Stack(
-              children: [
-                const AskForScreen(),
-                Positioned(
-                  right: 16,
-                  bottom: 16,
-                  child: SafeArea(
-                    child: FloatingActionButton(
-                      heroTag: "askFab",
-                      onPressed: () async {
-                        final fn = AskForScreenController.create;
-                        if (fn != null) await fn();
-                      },
-                      elevation: 4,
-                      backgroundColor: const Color(0xFFFFFFFF),
-                      shape: const CircleBorder(),
-                      child: const Icon(
-                        Icons.add,
-                        size: 35,
-                        color: Color(0xFF59BDF7),
+                ],
+              );
+
+            case 2:
+              // ★ 구해요 글 생성 플로팅 버튼
+              return Stack(
+                children: [
+                  const AskForScreen(),
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: SafeArea(
+                      child: FloatingActionButton(
+                        heroTag: "askFab",
+                        onPressed: () async {
+                          final fn = AskForScreenController.create;
+                          if (fn != null) await fn();
+                        },
+                        elevation: 4,
+                        backgroundColor: const Color(0xFFFFFFFF),
+                        shape: const CircleBorder(),
+                        child: const Icon(
+                          Icons.add,
+                          size: 35,
+                          color: Color(0xFF59BDF7),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            );
-          } else {
-            // ★ 장소 글 생성 플로팅 버튼 : PlaceTabScreen + 동일 스타일의 FAB
-            return Stack(
-              children: [
-                const PlaceTabScreen(),
-                Positioned(
-                  right: 16,
-                  bottom: 16,
-                  child: SafeArea(
-                    child: FloatingActionButton(
-                      heroTag: "placeFab",
-                      onPressed: () async {
-                        final fn = PlaceTabScreenController.create;
-                        if (fn != null)
-                          await fn(); // place_create_screen 열기 + 인서트
-                      },
-                      elevation: 4,
-                      backgroundColor: const Color(0xFFFFFFFF),
-                      shape: const CircleBorder(),
-                      child: const Icon(
-                        Icons.add,
-                        size: 35,
-                        color: Color(0xFF59BDF7),
+                ],
+              );
+
+            default:
+              // ★ 장소 글 생성 플로팅 버튼 : PlaceTabScreen + 동일 스타일의 FAB
+              return Stack(
+                children: [
+                  const PlaceTabScreen(),
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: SafeArea(
+                      child: FloatingActionButton(
+                        heroTag: "placeFab",
+                        onPressed: () async {
+                          final fn = PlaceTabScreenController.create;
+                          if (fn != null)
+                            await fn(); // place_create_screen 열기 + 인서트
+                        },
+                        elevation: 4,
+                        backgroundColor: const Color(0xFFFFFFFF),
+                        shape: const CircleBorder(),
+                        child: const Icon(
+                          Icons.add,
+                          size: 35,
+                          color: Color(0xFF59BDF7),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            );
+                ],
+              );
           }
         },
       ),
@@ -336,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildCard(
                   width: 240,
                   image:
-                      'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=900&q=80',
+                      "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=900&q=80",
                   title: "함께 성장하는 독서 모임",
                   tags: "#독서 #자기계발",
                   heartCount: 120,
@@ -346,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildCard(
                   width: 240,
                   image:
-                      'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=900&q=80',
+                      "https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=900&q=80",
                   title: "주말엔 브런치",
                   tags: "#맛집 #취향공유",
                   heartCount: 88,
@@ -356,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildCard(
                   width: 240,
                   image:
-                      'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=80',
+                      "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=80",
                   title: "토요일엔 스터디/기타 긴 이름 예시",
                   tags: "#스터디 #개발 #네트워킹",
                   heartCount: 77,
@@ -366,7 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildCard(
                   width: 240,
                   image:
-                      'https://images.unsplash.com/photo-1549488344-cbb6c34cf08b?auto=format&fit=crop&w=900&q=80',
+                      "https://images.unsplash.com/photo-1549488344-cbb6c34cf08b?auto=format&fit=crop&w=900&q=80",
                   title: "문화 탐방 모임",
                   tags: "#전시 #문화생활",
                   heartCount: 65,
@@ -388,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildCard(
                   width: 200,
                   image:
-                      'https://images.unsplash.com/photo-1508264165352-258db2ebd59b?auto=format&fit=crop&w=1200&q=80',
+                      "https://images.unsplash.com/photo-1508264165352-258db2ebd59b?auto=format&fit=crop&w=1200&q=80",
                   title: "별 보러 가는 언덕",
                   tags: "",
                   heartCount: 95,
@@ -398,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildCard(
                   width: 200,
                   image:
-                      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=1200&q=80',
+                      "https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=1200&q=80",
                   title: "조용한 카페",
                   tags: "",
                   heartCount: 76,
@@ -408,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildCard(
                   width: 200,
                   image:
-                      'https://images.unsplash.com/photo-1559348331-267151a6275a?auto=format&fit=crop&w=1200&q=80',
+                      "https://images.unsplash.com/photo-1559348331-267151a6275a?auto=format&fit=crop&w=1200&q=80",
                   title: "아늑한 북카페",
                   tags: "",
                   heartCount: 54,
@@ -418,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildCard(
                   width: 200,
                   image:
-                      'https://images.unsplash.com/photo-1543394339-a0a39d8cad13?auto=format&fit=crop&w=1200&q=80',
+                      "https://images.unsplash.com/photo-1543394339-a0a39d8cad13?auto=format&fit=crop&w=1200&q=80",
                   title: "캠퍼스 뒤 공원",
                   tags: "",
                   heartCount: 61,
@@ -429,14 +328,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 40),
-          SectionTitle(title: "🔥 지금 가장 핫한 유저", onMoreTap: () {}),
+          const SectionTitle(title: "🔥 지금 가장 핫한 유저"),
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround, // 간격 자동 조절
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                // ✨ 개선점: Expanded로 감싸서 공간을 유연하게 차지하도록 변경
                 Expanded(
                   child: _buildUser(
                     imageUrl:
@@ -487,14 +385,14 @@ class _HomeScreenState extends State<HomeScreen> {
     bool showPeople = true,
     String peopleText = "5/10명",
     bool showTags = true,
-    double? titleFontSize, // ✅ nullable: 전달 없으면 타입별 기본값
+    double? titleFontSize,
   }) {
     const kMeetingTitleSize = 19.0;
     const kPlaceTitleSize = 16.0;
 
     final tagList = tags.trim().isEmpty
         ? <String>[]
-        : tags.trim().split(RegExp(r'\s+'));
+        : tags.trim().split(RegExp(r"\s+"));
 
     final double resolvedTitleSize =
         titleFontSize ?? (showPeople ? kMeetingTitleSize : kPlaceTitleSize);
@@ -649,7 +547,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(7),
                           ),
                           child: Text(
-                            tag.startsWith('#') ? tag : '#$tag',
+                            tag.startsWith("#") ? tag : "#$tag",
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
@@ -696,7 +594,6 @@ class _HomeScreenState extends State<HomeScreen> {
     String tag = "#기본태그",
     String bio = "자기소개 텍스트",
   }) {
-    // ✨ 개선점: GestureDetector로 감싸서 탭 가능하도록 만듦
     return GestureDetector(
       onTap: () => _showUserPopup(
         imageUrl: imageUrl,
@@ -796,7 +693,7 @@ class SectionTitle extends StatelessWidget {
               style: TextStyle(
                 color: kTextMuted,
                 fontSize: 13,
-                fontWeight: FontWeight.w600, // ← 굵기 추가
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -805,7 +702,7 @@ class SectionTitle extends StatelessWidget {
   }
 }
 
-// -------------------- [핫한 유저] 상세 팝업 위젯 --------------------
+// -------------------- [핫한 유저] 상세 팝업 --------------------
 class UserDetailPopup extends StatelessWidget {
   final String imageUrl;
   final String name;
@@ -919,7 +816,7 @@ class UserDetailPopup extends StatelessWidget {
                       runSpacing: 6,
                       alignment: WrapAlignment.center,
                       children: tag
-                          .split(' ')
+                          .split(" ")
                           .where((t) => t.isNotEmpty)
                           .map(
                             (t) => Container(
@@ -933,7 +830,7 @@ class UserDetailPopup extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(13),
                               ),
                               child: Text(
-                                t.startsWith('#') ? t : '#$t',
+                                t.startsWith("#") ? t : "#$t",
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w700,
@@ -1001,7 +898,6 @@ class UserDetailPopup extends StatelessWidget {
                                 size: 18,
                               ),
                               const SizedBox(width: 6),
-                              // ✨ 개선점: 하드코딩된 'Likes' 대신 실제 값을 표시
                               Text(
                                 "$likes",
                                 style: const TextStyle(

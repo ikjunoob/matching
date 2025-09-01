@@ -5,10 +5,12 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:image_picker/image_picker.dart";
 import "package:file_picker/file_picker.dart";
+import "package:matching/screens/place_preview_screen.dart";
 import "package:permission_handler/permission_handler.dart";
 import "package:intl/intl.dart";
 import 'post_preview_screen.dart';
 import 'question_builder_screen.dart';
+
 
 // ▼ 추가 패키지
 import 'package:dropdown_button2/dropdown_button2.dart';
@@ -17,10 +19,11 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 
 /// ===== Design Tokens (표 기준) =====
-const kAccent = Color(0xFF5BA7FF); // 포커스/포인트
+const kAccent = Color(0xFF5DADE2); // 포커스/포인트
 const kBorder = Color(0xFFE5E7EB); // 테두리
 const kBorderStrong = Color(0xFFCBD5E1); // AppBar 하단 진한 보더
 const kPageBg = Color(0xFFFFFFFF); // 메인 배경 - 흰색으로 변경
+const kcontents = Color(0xFFF9FAFB);
 const kCardBg = Color(0xFFFFFFFF); // 카드/서브 배경
 const kTextPrimary = Color(0xFF111827); // 본문 텍스트
 const kTextMuted = Color(0xFF6B7280); // 보조 텍스트
@@ -290,7 +293,7 @@ class _PostScreenState extends State<PostScreen> {
     final result = await showModalBottomSheet<DateTime>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: kCardBg,
+      backgroundColor: kcontents,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -475,7 +478,7 @@ class _PostScreenState extends State<PostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kPageBg, // 1) 흰 배경
+      backgroundColor: theme.kPageBg, // 1) 흰 배경
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(
@@ -687,7 +690,12 @@ class _PostScreenState extends State<PostScreen> {
                     decoration: BoxDecoration(
                       color: _templateInserted
                           ? kAccent.withOpacity(0.12)
-                          : const Color.fromARGB(255, 244, 244, 244), // 더 연함 // 배경색상
+                          : const Color.fromARGB(
+                              255,
+                              244,
+                              244,
+                              244,
+                            ), // 더 연함 // 배경색상
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: _templateInserted
@@ -704,7 +712,12 @@ class _PostScreenState extends State<PostScreen> {
                           vertical: 4,
                         ),
                         minimumSize: Size.zero,
-                        foregroundColor: const Color.fromARGB(255, 122, 129, 144), // 텍스트 색상
+                        foregroundColor: const Color.fromARGB(
+                          255,
+                          122,
+                          129,
+                          144,
+                        ), // 텍스트 색상
                       ),
                       child: Text(
                         _templateInserted ? "질문 템플릿 취소" : "질문 템플릿 추가",
@@ -726,8 +739,10 @@ class _PostScreenState extends State<PostScreen> {
                   color: kTextPrimary,
                   height: 1.4,
                 ),
-                decoration: _whiteFieldDecoration(hint: "구하는 목적, 필요한 내용, 기간 등을 상세하게 적어주세요.")
-                    .copyWith(
+                decoration:
+                    _whiteFieldDecoration(
+                      hint: "구하는 목적, 필요한 내용, 기간 등을 상세하게 적어주세요.",
+                    ).copyWith(
                       fillColor: Colors.white,
                       contentPadding: const EdgeInsets.fromLTRB(
                         kFieldHPad,
@@ -874,7 +889,7 @@ class _PostScreenState extends State<PostScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: theme.kTextPrimary,
                     ),
                   ),
                 ),

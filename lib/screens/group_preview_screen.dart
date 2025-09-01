@@ -29,12 +29,24 @@ class _GroupPreviewScreenState extends State<GroupPreviewScreen> {
   List<String> get _rules =>
       (widget.group['rules'] as List?)?.cast<String>() ?? const <String>[];
 
+  List<String> get _tags {
+    final raw = (widget.group['tags'] as List?)?.whereType<String>() ?? [];
+    return raw
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .map((t) => t.startsWith('#') ? t : '#$t')
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final title = (widget.group['title'] as String?)?.trim().isEmpty != true
-        ? widget.group['title']
+    final title = (widget.group['title'] as String?)?.trim().isNotEmpty == true
+        ? widget.group['title'] as String
         : "모임";
-    final category = widget.group['category'] ?? "기타";
+    final category =
+        (widget.group['category'] as String?)?.trim().isNotEmpty == true
+        ? widget.group['category'] as String
+        : "기타";
     final intro = widget.group['intro'] ?? "";
     final schedule = widget.group['schedule'] ?? "";
     final place = widget.group['place'] ?? "";
@@ -62,7 +74,7 @@ class _GroupPreviewScreenState extends State<GroupPreviewScreen> {
         ),
         centerTitle: true,
         title: Text(
-          "$title",
+          title,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: theme.kTextPrimary,
@@ -118,89 +130,89 @@ class _GroupPreviewScreenState extends State<GroupPreviewScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 제목 + 카테고리 칩
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        "$title",
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: theme.kTextPrimary,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: theme.kDivider),
-                      ),
-                      child: Text(
-                        "$category",
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: theme.kTextPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
+                // 제목
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: theme.kTextPrimary,
+                  ),
                 ),
                 const SizedBox(height: 8),
 
-                // 인원/뷰/좋아요 메타
+                // 제목 밑: #태그
+                if (_tags.isNotEmpty) ...[
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: _tags
+                        .map(
+                          (t) => Text(
+                            t,
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              color: theme.kTextMuted,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+
+                // 태그 밑: 카테고리 + 인원/조회/좋아요 (한 줄)
                 Row(
                   children: [
+                    _CategoryPill(label: category),
+                    const SizedBox(width: 10),
+
                     const FaIcon(
-                      FontAwesomeIcons.user,
-                      size: 14,
-                      color: Color(0xFF1F2937),
+                      FontAwesomeIcons.users,
+                      size: 13,
+                      color: theme.kTextPrimary,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
                     Text(
-                      "$memberCnt / $memberLimit",
+                      "$memberCnt/$memberLimit",
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF1F2937),
+                        color: theme.kTextPrimary,
                       ),
                     ),
-                    const SizedBox(width: 14),
+
+                    const SizedBox(width: 12),
                     const FaIcon(
                       FontAwesomeIcons.solidEye,
-                      size: 14,
-                      color: Color(0xFF4B4B4B),
+                      size: 13,
+                      color: theme.kTextPrimary,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
                     Text(
                       "$_viewCount",
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF1F2937),
+                        color: theme.kTextPrimary,
                       ),
                     ),
-                    const SizedBox(width: 14),
+
+                    const SizedBox(width: 12),
                     const FaIcon(
                       FontAwesomeIcons.solidHeart,
-                      size: 14,
+                      size: 13,
                       color: Colors.red,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
                     Text(
                       "$_likeCount",
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF1F2937),
+                        color: theme.kTextPrimary,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 18),
 
                 // 한 줄 소개
                 if (intro.toString().trim().isNotEmpty) ...[
@@ -316,7 +328,6 @@ class _GroupPreviewScreenState extends State<GroupPreviewScreen> {
                           ),
                         ),
                       ),
-                      // 연두색 1:1 문의
                       TextButton(
                         onPressed: () {},
                         style: TextButton.styleFrom(
@@ -324,8 +335,8 @@ class _GroupPreviewScreenState extends State<GroupPreviewScreen> {
                             horizontal: 12,
                             vertical: 8,
                           ),
-                          backgroundColor: const Color(0xFFE8F7EC), // 연두색 배경
-                          foregroundColor: const Color(0xFF2F9E44), // 연한 초록 텍스트
+                          backgroundColor: const Color(0xFFE8F7EC),
+                          foregroundColor: const Color(0xFF2F9E44),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -410,6 +421,31 @@ class _InfoRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _CategoryPill extends StatelessWidget {
+  final String label;
+  const _CategoryPill({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.kDivider),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 10,
+          color: theme.kTextPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

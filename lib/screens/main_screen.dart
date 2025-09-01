@@ -4,8 +4,9 @@ import 'home_screen.dart';
 import 'group_tab_screen.dart'; // ✅ 이 파일에서 노출되는 클래스는 GroupTabScreen
 import 'calendar_screen.dart';
 import 'profile_screen.dart';
-import 'custom_bottom_nav_bar.dart';
+import '../widgets/app_bottom_nav.dart';
 import 'matching_screen.dart';
+import 'mygroup.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({
@@ -71,7 +72,7 @@ class _MainScreenState extends State<MainScreen> {
 
     switch (navIndex) {
       case 1:
-        return const GroupTabScreen(); // ✅ 여기!
+        return const MyGroupScreen(); // ✅ 여기!
       case 2:
         return const MatchingScreen();
       case 3:

@@ -209,7 +209,7 @@ class _AskForScreenState extends State<AskForScreen> {
     final visiblePosts = _applySort(filtered);
 
     return Scaffold(
-      backgroundColor: theme.kPageBg,
+      backgroundColor: theme.kcontents,
       body: Column(
         children: [
           _buildSortAndCategoryBar(),

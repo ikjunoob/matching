@@ -14,7 +14,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'place_preview_screen.dart';
 
 // ===== 디자인 토큰 =====
-const kAccent = Color(0xFF5BA7FF);
+const kAccent = Color(0xFF5DADE2);
 const kBorder = Color(0xFFE5E7EB);
 const kBorderStrong = Color(0xFFCBD5E1);
 const kPageBg = Color(0xFFFFFFFF);
@@ -598,7 +598,7 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
                   style: ElevatedButton.styleFrom(
                     elevation: 10,
                     shadowColor: const Color.fromRGBO(59, 138, 246, 0.4),
-                    backgroundColor: kPlaceCtaBg,
+                    backgroundColor: kAccent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(kFieldRadius),
                     ),

@@ -14,6 +14,9 @@ const kTextMuted = Color(0xFF6B7280);
 // 페이지 배경
 const kPageBg = Color.fromARGB(255, 255, 255, 255);
 
+// 컨텐츠 안 배경
+const kcontents = Color(0xFFF9FAFB);
+
 // 얇은 구분선: #E5E7EB
 const kDivider = Color(0xFFE5E7EB);
 

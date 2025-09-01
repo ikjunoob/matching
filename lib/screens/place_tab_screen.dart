@@ -370,7 +370,7 @@ class _PlaceTabScreenState extends State<PlaceTabScreen> {
     final visible = _applySortAndFilter();
 
     return Scaffold(
-      backgroundColor: theme.kPageBg,
+      backgroundColor: theme.kcontents,
       body: Column(
         children: [
           _SortAndCategoryBar(
