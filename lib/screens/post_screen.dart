@@ -11,7 +11,6 @@ import "package:intl/intl.dart";
 import 'post_preview_screen.dart';
 import 'question_builder_screen.dart';
 
-
 // ▼ 추가 패키지
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -764,9 +763,10 @@ class _PostScreenState extends State<PostScreen> {
                 controller: _tagCtrl,
                 focusNode: _tagFocus,
                 onChanged: _onTagChanged,
-                style: const TextStyle(
-                  fontSize: kFieldFont,
+                style: TextStyle(
+                  fontSize: _templateInserted ? (kFieldFont * 0.1) : kFieldFont,
                   color: kTextPrimary,
+                  height: 1.4,
                 ),
                 decoration: _whiteFieldDecoration(hint: "#태그 입력 후 스페이스바"),
                 validator: _tagsValidator,
