@@ -232,10 +232,10 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                               content.isEmpty ? "내용이 없습니다." : content,
                               style: TextStyle(
                                 fontSize: contentSize,
-                                height: 1.45,
+                                height: 1.0,
                                 color: kTextPrimary,
                               ),
-                              maxLines: 3,
+                              maxLines: 100,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],

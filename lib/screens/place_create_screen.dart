@@ -682,7 +682,7 @@ class _AddImageTile extends StatelessWidget {
         width: 72,
         height: 72,
         child: Material(
-          color: kCameraTileBg,
+          color: const Color.fromARGB(255, 243, 245, 248),
           borderRadius: BorderRadius.circular(10),
           child: InkWell(
             borderRadius: BorderRadius.circular(10),

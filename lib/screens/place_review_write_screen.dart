@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+
 class theme {
   static const kTextPrimary = Color(0xFF1F2937);
   static const kTextMuted = Color(0xFF6B7280);
@@ -35,9 +36,9 @@ class _PlaceReviewWriteScreenState extends State<PlaceReviewWriteScreen> {
   static const double kBtnHeight = 48;
 
   // 최소/최대 폭 (원하는 대로 조정)
-  static const double kYearMin = 120, kYearMax = 200;
+  static const double kYearMin = 130, kYearMax = 200;
   static const double kMonthMin = 100, kMonthMax = 110;
-  static const double kDayMin = 115, kDayMax = 170;
+  static const double kDayMin = 105, kDayMax = 170;
 
   List<int> get _years {
     final now = DateTime.now().year;
@@ -179,6 +180,32 @@ class _PlaceReviewWriteScreenState extends State<PlaceReviewWriteScreen> {
       }
     }
     return [y, m, d];
+  }
+
+  // ====== 선택된 값 중앙 정렬 빌더 ======
+  List<Widget> _centeredSelectedItems<T>(
+    List<T> values,
+    String Function(T) label,
+    TextStyle style,
+  ) {
+    return values
+        .map(
+          (v) => Center(
+            child: Padding(
+              // ▼ 아이콘 때문에 살짝 오른쪽 여백 보정 (원치 않으면 0으로)
+              padding: EdgeInsets.only(right: kIconApproxWidth / 2),
+              child: Text(
+                label(v),
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.fade,
+                textAlign: TextAlign.center,
+                style: style,
+              ),
+            ),
+          ),
+        )
+        .toList();
   }
 
   void _submit() {
@@ -324,6 +351,7 @@ class _PlaceReviewWriteScreenState extends State<PlaceReviewWriteScreen> {
 
                 return Row(
                   children: [
+                    // ===== 년 =====
                     SizedBox(
                       width: yearW,
                       child: DropdownButtonHideUnderline(
@@ -338,21 +366,13 @@ class _PlaceReviewWriteScreenState extends State<PlaceReviewWriteScreen> {
                                 ),
                               )
                               .toList(),
-                          // 선택 표시 한 줄 고정
-                          selectedItemBuilder: (_) => _years
-                              .map(
-                                (y) => Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    "$y년",
-                                    maxLines: 1,
-                                    softWrap: false,
-                                    overflow: TextOverflow.fade,
-                                    style: labelStyle,
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                          // 선택된 값 중앙 정렬
+                          selectedItemBuilder: (_) =>
+                              _centeredSelectedItems<int>(
+                                _years,
+                                (y) => "$y년",
+                                labelStyle,
+                              ),
                           onChanged: (v) => setState(() {
                             _year = v!;
                             final last = DateTime(_year, _month + 1, 0).day;
@@ -366,6 +386,8 @@ class _PlaceReviewWriteScreenState extends State<PlaceReviewWriteScreen> {
                       ),
                     ),
                     const SizedBox(width: kGap),
+
+                    // ===== 월 =====
                     SizedBox(
                       width: monthW,
                       child: DropdownButtonHideUnderline(
@@ -380,20 +402,13 @@ class _PlaceReviewWriteScreenState extends State<PlaceReviewWriteScreen> {
                                 ),
                               )
                               .toList(),
-                          selectedItemBuilder: (_) => _months
-                              .map(
-                                (m) => Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    "$m월",
-                                    maxLines: 1,
-                                    softWrap: false,
-                                    overflow: TextOverflow.fade,
-                                    style: labelStyle,
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                          // 선택된 값 중앙 정렬
+                          selectedItemBuilder: (_) =>
+                              _centeredSelectedItems<int>(
+                                _months,
+                                (m) => "$m월",
+                                labelStyle,
+                              ),
                           onChanged: (v) => setState(() {
                             _month = v!;
                             final last = DateTime(_year, _month + 1, 0).day;
@@ -407,6 +422,8 @@ class _PlaceReviewWriteScreenState extends State<PlaceReviewWriteScreen> {
                       ),
                     ),
                     const SizedBox(width: kGap),
+
+                    // ===== 일 =====
                     SizedBox(
                       width: dayW,
                       child: DropdownButtonHideUnderline(
@@ -421,20 +438,13 @@ class _PlaceReviewWriteScreenState extends State<PlaceReviewWriteScreen> {
                                 ),
                               )
                               .toList(),
-                          selectedItemBuilder: (_) => _days
-                              .map(
-                                (d) => Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    "$d일",
-                                    maxLines: 1,
-                                    softWrap: false,
-                                    overflow: TextOverflow.fade,
-                                    style: labelStyle,
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                          // 선택된 값 중앙 정렬
+                          selectedItemBuilder: (_) =>
+                              _centeredSelectedItems<int>(
+                                _days,
+                                (d) => "$d일",
+                                labelStyle,
+                              ),
                           onChanged: (v) => setState(() => _day = v!),
                           buttonStyleData: _btnStyleW(dayW),
                           iconStyleData: _iconStyle,
@@ -495,7 +505,7 @@ class _PlaceReviewWriteScreenState extends State<PlaceReviewWriteScreen> {
                 onPressed: _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.kAccent,
-                  foregroundColor: Colors.white,
+                  foregroundColor: theme.kTextPrimary,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
