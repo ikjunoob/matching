@@ -766,7 +766,7 @@ class _PostScreenState extends State<PostScreen> {
                 style: TextStyle(
                   fontSize: _templateInserted ? (kFieldFont * 0.1) : kFieldFont,
                   color: kTextPrimary,
-                  height: 1.4,
+                  height: 1.0,
                 ),
                 decoration: _whiteFieldDecoration(hint: "#태그 입력 후 스페이스바"),
                 validator: _tagsValidator,
