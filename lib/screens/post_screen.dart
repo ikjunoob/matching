@@ -733,11 +733,12 @@ class _PostScreenState extends State<PostScreen> {
               TextFormField(
                 controller: _contentCtrl,
                 maxLines: 7,
-                style: const TextStyle(
-                  fontSize: kFieldFont,
+                style: TextStyle(
+                  fontSize: _templateInserted ? (kFieldFont * 0.9) : kFieldFont,
                   color: kTextPrimary,
                   height: 1.4,
                 ),
+
                 decoration:
                     _whiteFieldDecoration(
                       hint: "구하는 목적, 필요한 내용, 기간 등을 상세하게 적어주세요.",
@@ -763,10 +764,9 @@ class _PostScreenState extends State<PostScreen> {
                 controller: _tagCtrl,
                 focusNode: _tagFocus,
                 onChanged: _onTagChanged,
-                style: TextStyle(
-                  fontSize: _templateInserted ? (kFieldFont * 0.1) : kFieldFont,
+                style: const TextStyle(
+                  fontSize: kFieldFont,
                   color: kTextPrimary,
-                  height: 1.0,
                 ),
                 decoration: _whiteFieldDecoration(hint: "#태그 입력 후 스페이스바"),
                 validator: _tagsValidator,
