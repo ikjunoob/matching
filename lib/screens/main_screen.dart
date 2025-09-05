@@ -1,12 +1,12 @@
-// main_screen.dart
+// lib/screens/main_screen.dart
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-import 'group_tab_screen.dart'; // ✅ 이 파일에서 노출되는 클래스는 GroupTabScreen
 import 'calendar_screen.dart';
 import 'profile_screen.dart';
 import '../widgets/app_bottom_nav.dart';
-import 'matching_screen.dart';
+import 'matching_screen.dart'; // 중앙 버튼용
 import 'mygroup.dart';
+import 'hotusers.dart'; // ★ 추가
 
 class MainScreen extends StatefulWidget {
   const MainScreen({
@@ -23,8 +23,8 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  late int _selectedIndex;
-  late int _homeTabIndex;
+  late int _selectedIndex; // 0~4 = 하단바 탭, 5 = 핫유저 숨은 페이지
+  late int _homeTabIndex; // 홈 내부 탭
 
   @override
   void initState() {
@@ -35,52 +35,48 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final int navBarIndex = (_selectedIndex == 5) ? 0 : _selectedIndex;
+
     return Scaffold(
       extendBody: true,
-      body: _getPage(_selectedIndex, _homeTabIndex),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: (i) {
-          if (i == 0) {
-            setState(() {
-              _selectedIndex = 0;
-              _homeTabIndex = 0;
-            });
-          } else {
-            setState(() {
-              _selectedIndex = i;
-            });
-          }
-        },
-        onCenterTap: () => setState(() => _selectedIndex = 2),
-      ),
-    );
-  }
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          // 0: 홈
+          HomeScreen(
+            tabIndex: _homeTabIndex,
+            onTabChange: (idx) => setState(() => _homeTabIndex = idx),
+            onOpenHotUsers: () =>
+                setState(() => _selectedIndex = 5), // ★ 더보기 > 누르면 5번으로
+          ),
 
-  Widget _getPage(int navIndex, int homeTabIndex) {
-    if (navIndex == 0 || navIndex == -1) {
-      return HomeScreen(
-        tabIndex: homeTabIndex,
-        onTabChange: (idx) {
+          // 1: 내 모임
+          const MyGroupScreen(),
+
+          // 2: 매칭 (중앙 플로팅)
+          const MatchingScreen(),
+
+          // 3: 캘린더
+          const CalendarScreen(),
+
+          // 4: 프로필
+          const ProfileScreen(),
+
+          // 5: 🔥 핫한 유저(숨은 페이지) — 하단바엔 버튼 없음. 홈 강조 유지.
+          const HotUsersScreen(),
+        ],
+      ),
+
+      bottomNavigationBar: CustomBottomNavBar(
+        currentIndex: navBarIndex,
+        onTap: (i) {
           setState(() {
-            _homeTabIndex = idx;
-            _selectedIndex = (idx == 0) ? 0 : -1;
+            _selectedIndex = i; // 0,1,3,4로 이동
+            if (i == 0) _homeTabIndex = 0; // 홈 아이콘 → 홈 내부 탭도 "추천"
           });
         },
-      );
-    }
-
-    switch (navIndex) {
-      case 1:
-        return const MyGroupScreen(); // ✅ 여기!
-      case 2:
-        return const MatchingScreen();
-      case 3:
-        return const CalendarScreen();
-      case 4:
-        return const ProfileScreen();
-      default:
-        return const HomeScreen();
-    }
+        onCenterTap: () => setState(() => _selectedIndex = 2), // 가운데 버튼 → 매칭
+      ),
+    );
   }
 }

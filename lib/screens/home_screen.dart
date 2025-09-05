@@ -8,6 +8,7 @@ import "notification_screen.dart";
 import "ask_for_screen.dart";
 import "place_tab_screen.dart";
 import "group_tab_screen.dart";
+import "hotusers.dart";
 
 // ===== 공통 위젯(분리한 헤더/탭) =====
 import "../widgets/app_header.dart";
@@ -24,8 +25,14 @@ const kIndicator = Color(0xFFAED6F1); // 상단 인디케이터(기존 톤 유�
 class HomeScreen extends StatefulWidget {
   final int tabIndex;
   final void Function(int tabIndex)? onTabChange;
+  final VoidCallback? onOpenHotUsers;
 
-  const HomeScreen({super.key, this.tabIndex = 0, this.onTabChange});
+  const HomeScreen({
+    super.key,
+    this.tabIndex = 0,
+    this.onTabChange,
+    this.onOpenHotUsers, // ★
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -328,7 +335,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 40),
-          const SectionTitle(title: "🔥 지금 가장 핫한 유저"),
+          SectionTitle(
+            title: "🔥 지금 가장 핫한 유저",
+            onMoreTap:
+                widget.onOpenHotUsers ??
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HotUsersScreen()),
+                  );
+                },
+          ),
+
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),

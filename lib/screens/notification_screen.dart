@@ -8,6 +8,20 @@ class NotificationScreen extends StatefulWidget {
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
+// ===== Color Tokens (알림페이지 색상표 1:1 매핑) =====
+const kScreenBg = Color(0xFFF9FAFB); // 페이지 배경
+const kItemBgUnread = Color(0xFFFFFFFF); // 항목 배경(읽지 않음)
+const kItemBgRead = Color(0xFFF9FAFB); // 항목 배경(읽음)
+
+const kTitleColor = Color(0xFF1F2937); // 제목(타이틀)
+const kTimeColor = Color(0xFF9CA3AF); // 알림 시간
+const kBottomIconColor = Color(0xFF9CA3AF); // 하단 아이콘
+const kBackIconColor = Color(0xFF6B7280); // 뒤로가기 아이콘
+
+const kNewDot = Color(0xFF06B6D4); // 새 알림 점
+const kClose = Color(0xFFD1D5DB); // X 버튼 기본
+const kCloseHover = Color(0xFF4B5563); // X 버튼 hover
+
 class _NotificationScreenState extends State<NotificationScreen> {
   // 알림 더미 데이터
   List<Map<String, dynamic>> notifications = [
@@ -39,47 +53,32 @@ class _NotificationScreenState extends State<NotificationScreen> {
     {"title": "'이달의 인기 유저'로 선정되셨습니다! 축하드려요.", "time": "3일 전", "unread": false},
   ];
 
-  // 제목 키워드로 아이콘/색 결정 (FontAwesome 아이콘 매핑)
+  // 아이콘 종류(모양)만 분기. 색은 표대로 고정 회색(kBottomIconColor).
   IconData _iconForTitle(String title) {
     if (title.contains("승인") || title.contains("완료") || title.contains("수정")) {
-      return FontAwesomeIcons.checkCircle; // 활동 체크
+      return FontAwesomeIcons.checkCircle;
     }
-    if (title.contains("공지")) return FontAwesomeIcons.bullhorn; // 뉴스/공지
-    if (title.contains("댓글")) return FontAwesomeIcons.solidCommentDots; // 대화/댓글
-    if (title.contains("초대")) return FontAwesomeIcons.solidCommentDots; // 쪽지/대화
-    if (title.contains("이벤트")) return FontAwesomeIcons.infoCircle; // 정보성
-    if (title.contains("추천")) return FontAwesomeIcons.infoCircle; // 정보성
+    if (title.contains("공지")) return FontAwesomeIcons.bullhorn;
+    if (title.contains("댓글")) return FontAwesomeIcons.solidCommentDots;
+    if (title.contains("초대")) return FontAwesomeIcons.solidCommentDots;
+    if (title.contains("이벤트")) return FontAwesomeIcons.infoCircle;
+    if (title.contains("추천")) return FontAwesomeIcons.infoCircle;
     if (title.contains("모임") || title.contains("동아리")) {
-      return FontAwesomeIcons.users; // 그룹
+      return FontAwesomeIcons.users;
     }
-    return FontAwesomeIcons.infoCircle; // 기본 정보
-  }
-
-  Color _iconColorForTitle(String title) {
-    if (title.contains("승인") || title.contains("완료")) {
-      return const Color(0xFF10B981); // 초록
-    }
-    if (title.contains("공지")) return const Color(0xFFF59E0B); // 주황
-    if (title.contains("댓글")) return const Color(0xFF3B82F6); // 파랑
-    if (title.contains("초대")) return const Color(0xFF8B5CF6); // 보라
-    if (title.contains("이벤트")) return const Color(0xFFEF4444); // 빨강
-    if (title.contains("추천")) return const Color(0xFF06B6D4); // 시그니처
-    return const Color(0xFF9CA3AF); // 기본 회색
+    return FontAwesomeIcons.infoCircle;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: kScreenBg,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const FaIcon(
-            FontAwesomeIcons.arrowLeft,
-            color: Colors.black,
-            size: 18,
-          ),
+          icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 18),
+          color: kBackIconColor, // ← 표 기준 적용
           onPressed: () => Navigator.pop(context),
         ),
         title: const Align(
@@ -87,7 +86,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           child: Text(
             "알림",
             style: TextStyle(
-              color: Colors.black,
+              color: Color(0xFF111827), // 상단 타이틀은 진한 텍스트
               fontSize: 18,
               fontWeight: FontWeight.bold,
               height: 1.1,
@@ -138,19 +137,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: unread ? Colors.white : const Color(0xFFF9FAFB),
+                  color: unread ? kItemBgUnread : kItemBgRead, // 표 적용
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ListTile(
                   title: Text(
                     title,
                     style: const TextStyle(
-                      color: Color(0xFF1F2937),
+                      color: kTitleColor, // 표 적용
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
                     ),
                   ),
-                  // ⬇️ 시간 텍스트 왼쪽에 아이콘 + 일정 간격
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 6.0),
                     child: Row(
@@ -159,13 +157,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         FaIcon(
                           _iconForTitle(title),
                           size: 14,
-                          color: _iconColorForTitle(title),
+                          color: kBottomIconColor, // 표 기준 고정 회색
                         ),
-                        const SizedBox(width: 6), // 아이콘-시간 간격
+                        const SizedBox(width: 6),
                         Text(
                           time,
                           style: const TextStyle(
-                            color: Color(0xFF9CA3AF),
+                            color: kTimeColor, // 표 적용
                             fontSize: 12,
                           ),
                         ),
@@ -176,15 +174,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       ? const FaIcon(
                           FontAwesomeIcons.solidCircle,
                           size: 8,
-                          color: Color(0xFF06B6D4),
+                          color: kNewDot, // 표 적용
                         )
-                      : IconButton(
-                          icon: const FaIcon(
-                            FontAwesomeIcons.times,
-                            size: 14,
-                            color: Color(0xFF6B7280),
-                          ),
-                          tooltip: "알림 삭제",
+                      : _CloseHoverButton(
                           onPressed: () {
                             setState(() {
                               notifications.removeAt(index);
@@ -194,7 +186,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  tileColor: unread ? Colors.white : const Color(0xFFF9FAFB),
+                  tileColor: unread ? kItemBgUnread : kItemBgRead, // 표 적용
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
@@ -204,6 +196,36 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// X 버튼 hover 색상 구현 (모바일은 기본색만 보임)
+class _CloseHoverButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  const _CloseHoverButton({required this.onPressed});
+
+  @override
+  State<_CloseHoverButton> createState() => _CloseHoverButtonState();
+}
+
+class _CloseHoverButtonState extends State<_CloseHoverButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: IconButton(
+        tooltip: "알림 삭제",
+        icon: FaIcon(
+          FontAwesomeIcons.times,
+          size: 14,
+          color: _hover ? kCloseHover : kClose, // 표 적용 + hover
+        ),
+        onPressed: widget.onPressed,
       ),
     );
   }
