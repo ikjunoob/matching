@@ -514,6 +514,9 @@ class _WeekdayFilterBarState extends State<_WeekdayFilterBar> {
   double _indicatorWidth = 0;
   double _indicatorLeft = 0;
 
+  // ✅ [추가] 스크롤 컨트롤러
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -523,6 +526,13 @@ class _WeekdayFilterBarState extends State<_WeekdayFilterBar> {
       _measureItems();
       _updateIndicator(widget.selected, animate: false);
     });
+  }
+
+  // ✅ [추가] 스크롤 컨트롤러 메모리 해제
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -536,6 +546,7 @@ class _WeekdayFilterBarState extends State<_WeekdayFilterBar> {
   }
 
   void _measureItems() {
+    if (!mounted) return;
     _widths.clear();
     for (var key in _keys) {
       final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
@@ -551,7 +562,28 @@ class _WeekdayFilterBarState extends State<_WeekdayFilterBar> {
     final selectedIndex = options.indexWhere((opt) => opt.$2 == value);
     if (selectedIndex == -1 || selectedIndex >= _widths.length) return;
 
-    // ⚠️ 컨테이너 패딩을 더하지 않는다. (Stack 좌표계는 Row와 동일)
+    // 선택된 아이템의 중앙 위치 계산
+    double itemCenter = 0;
+    for (int i = 0; i < selectedIndex; i++) {
+      itemCenter += _widths[i];
+    }
+    itemCenter += _widths[selectedIndex] / 2;
+
+    // 스크롤 뷰의 현재 보이는 영역의 중앙 위치 계산
+    final screenWidth = MediaQuery.of(context).size.width;
+    final scrollViewportCenter = screenWidth / 2;
+
+    // ✅ [추가] 선택된 아이템이 화면 중앙에 오도록 스크롤 위치를 조정합니다.
+    _scrollController.animateTo(
+      // (아이템 중앙 위치 - 화면 중앙) 만큼 스크롤
+      (itemCenter - scrollViewportCenter).clamp(
+        0.0,
+        _scrollController.position.maxScrollExtent,
+      ),
+      duration: const Duration(milliseconds: 350), // 애니메이션 지속 시간
+      curve: Curves.easeOut, // 애니메이션 커브
+    );
+
     double left = 0;
     for (int i = 0; i < selectedIndex; i++) {
       left += _widths[i];
@@ -570,20 +602,20 @@ class _WeekdayFilterBarState extends State<_WeekdayFilterBar> {
     return Container(
       width: double.infinity,
       color: theme.kWhite,
-      // 바깥 여백 살짝 축소
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: ScrollConfiguration(
         behavior: NoScrollbarBehavior(),
         child: SingleChildScrollView(
+          // ✅ [수정] 스크롤 컨트롤러 연결
+          controller: _scrollController,
           scrollDirection: Axis.horizontal,
           child: Container(
-            // 트랙에 좌우 패딩을 주어 끝이 잘리지 않게
             padding: const EdgeInsets.symmetric(
               horizontal: _trackHPad,
               vertical: _trackVPad,
             ),
             decoration: BoxDecoration(
-              color: theme.kcontents, // ← 요청하신 색상 토큰
+              color: const Color(0xFFF3F4F6), // theme.kcontents 와 동일
               borderRadius: BorderRadius.circular(10),
             ),
             child: IntrinsicWidth(
@@ -591,8 +623,10 @@ class _WeekdayFilterBarState extends State<_WeekdayFilterBar> {
                 children: [
                   // 선택 인디케이터
                   AnimatedPositioned(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
+                    // ✅ [수정] 애니메이션 시간을 350ms로 늘려 더 부드럽게
+                    duration: const Duration(milliseconds: 350),
+                    // ✅ [수정] 애니메이션 커브를 변경하여 더 동적인 느낌을 줍니다.
+                    curve: Curves.easeInOutCubic,
                     left: _indicatorLeft,
                     top: 0,
                     bottom: 0,
